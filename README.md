@@ -1,5 +1,6 @@
-# pyCLT
 <img src="pyCLT_logo.png" alt="pyCLT logo" align="right" width="180" />
+
+# pyCLT
 
 Python translation of the Concentration Leaching and Transport (CLT) model used to simulate pesticide movement through soil layers. The original R code combined a simple water-balance with a two-layer residence-time model; this repo keeps the physics but improves structure and readability.
 

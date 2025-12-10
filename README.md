@@ -57,9 +57,9 @@ Expected outputs from `bcg01_demo.py`:
 - `examples/data/bcg01_results.png`: time series plot of relative concentration in top (0–10 cm) and subsoil (10–30 cm).
 
 <p>
-<img src="examples/data/bcg01_results.png" width="500">
+<img src="examples/data/bcg01_results.png">
 
-<em>Demo result using BCG01 data.</em>
+<em>Demo results using BCG01 data.</em>
 <p>
 
 ## Using your own data

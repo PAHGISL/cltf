@@ -1,8 +1,7 @@
+# pyCLT
 <img src="pyCLT_logo.png" alt="pyCLT logo" align="right" width="180" />
 
-# pyCLT
-
-Python translation of the Concentration Leaching and Transport (CLT) model used to simulate pesticide movement through soil layers. The original R code combined a simple water-balance with a two-layer residence-time model; this repo keeps the physics but improves structure and readability.
+Python translation of the Convective Log-normal Transfer (CLT) model used to simulate solute movement through soil layers. The original R code combined a simple water-balance with a two-layer residence-time model; this repo keeps the physics but improves structure and readability.
 
 ## Repo layout
 ```
@@ -97,3 +96,6 @@ df["subsoil_rel_conc"] = bottom
 - The model keeps the two-layer integration, linear depth-varying retardation in the lower layer, and simple exponential decay for each layer.
 - Missing temperature handling and site-by-site calibration loops from the R script are not reproduced here; add them as needed around the provided functions.
 - All computations are vectorised with numpy; defaults mirror the original R constants.
+
+## References
+- Jury, W. A., & Roth, K. (1990). *Transfer Functions and Solute Movement Through Soil*. Birkhäuser, Boston.

@@ -1,4 +1,4 @@
-"""Two-layer Concentration Leaching and Transport (CLT) model."""
+"""Two-layer Convective Log-normal Transfer (CLT) model."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ class CLTParameters:
 class TwoLayerCLT:
     """
     Translated from `CLT_1_integrated` in the R script.
-    Provides top (0–top_thickness) and sub-layer (top_thickness–bottom_depth) averages.
+    Provides top (0–top_thickness) and sub-layer (top_thickness-bottom_depth) averages.
     """
 
     def __init__(self, params: CLTParameters):

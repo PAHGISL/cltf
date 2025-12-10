@@ -1,9 +1,4 @@
-"""
-pyCLT
-------
-
-Python translation of the Concentration Leaching and Transport (CLT) model.
-"""
+"""Python translation of the Convective Log-normal Transfer (CLT) model."""
 
 from .climate import (
     pet_from_temp,

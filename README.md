@@ -56,6 +56,12 @@ Expected outputs from `bcg01_demo.py`:
 - `examples/data/bcg01_results.csv`: tabular time series with rain, ET0, cumulative infiltration, and relative concentrations (top/subsoil).
 - `examples/data/bcg01_results.png`: time series plot of relative concentration in top (0–10 cm) and subsoil (10–30 cm).
 
+<p>
+<img src="examples/data/bcg01_results.png" width="500">
+
+<em>Demo result using BCG01 data.</em>
+<p>
+
 ## Using your own data
 1) Prepare a dataframe (or CSV) with at least:
    - `jdays`: day-of-year integer (1–366)

@@ -9,6 +9,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+
+# Use non-interactive backend for headless environments.
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -45,6 +50,27 @@ def main() -> None:
     df["top_rel_conc"] = top
     df["subsoil_rel_conc"] = bottom
 
+    # Persist tabular results
+    out_csv = ROOT / "examples" / "data" / "bcg01_results.csv"
+    df[["Date", "rain_mm", "et0_mm", "cumulative_infiltration_mm", "top_rel_conc", "subsoil_rel_conc"]].to_csv(
+        out_csv, index=False
+    )
+
+    # Plot time series for top/subsoil relative concentration
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(df["Date"], df["top_rel_conc"], label="0–10 cm (relative)", color="tab:blue")
+    ax.plot(df["Date"], df["subsoil_rel_conc"], label="10–30 cm (relative)", color="tab:orange")
+    ax.set_ylabel("Relative concentration (C/C0)")
+    ax.set_xlabel("Date")
+    ax.legend()
+    fig.autofmt_xdate()
+    plt.tight_layout()
+    out_png = ROOT / "examples" / "data" / "bcg01_results.png"
+    fig.savefig(out_png, dpi=150)
+
+    print("Wrote results:")
+    print(f" - {out_csv}")
+    print(f" - {out_png}")
     print(df[["Date", "rain_mm", "et0_mm", "cumulative_infiltration_mm", "top_rel_conc", "subsoil_rel_conc"]].head())
     print("\n... tail ...\n")
     print(df[["Date", "rain_mm", "et0_mm", "cumulative_infiltration_mm", "top_rel_conc", "subsoil_rel_conc"]].tail())

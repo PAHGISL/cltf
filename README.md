@@ -52,6 +52,9 @@ cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/W
 python examples/generate_bcg01_climate.py        # writes examples/data/bcg01_2019_climate.csv
 python examples/bcg01_demo.py                    # runs CLT on that dataset
 ```
+Expected outputs from `bcg01_demo.py`:
+- `examples/data/bcg01_results.csv`: tabular time series with rain, ET0, cumulative infiltration, and relative concentrations (top/subsoil).
+- `examples/data/bcg01_results.png`: time series plot of relative concentration in top (0–10 cm) and subsoil (10–30 cm).
 
 ## Using your own data
 1) Prepare a dataframe (or CSV) with at least:

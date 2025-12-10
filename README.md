@@ -22,7 +22,8 @@ pyCLT/
 │   └── bcg01_2019_climate.csv # Daily Tmax/Tmin/rain for BCG01 (built from BoM files)
 │
 ├── requirements.txt           # Python dependencies (pip)
-└── README.md                  # Project overview & instructions
+├── README.md                  # Project overview & instructions
+└── pyCLT_logo.png             # Logo
 ```
 
 ## What the model does

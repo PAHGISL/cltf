@@ -1,4 +1,4 @@
-<img src="pyCLT_logo.png" alt="PyCLT logo" align="right" width="180" />
+<img src="PyCLT_logo.png" alt="PyCLT logo" align="right" width="180" />
 
 # PyCLT
 

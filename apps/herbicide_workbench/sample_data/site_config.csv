@@ -1,0 +1,5 @@
+site_id,soil_group,representative_lat,representative_lon,top_thickness_mm,reference_depth_mm,bottom_depth_mm,application_date,final_sample_date,notes,silo_lat,silo_lon
+SA_Minnipa,Heavy,-32.831016,135.14494,100,100,300,2024-06-12,2024-10-28,Representative paddock coordinate taken from Mick's heavier-soil Google Maps link; one SILO cell used for Heavy and Light soils.,-32.85,135.15
+SA_Minnipa,Light,-32.831016,135.14494,100,100,300,2024-06-12,2024-10-28,Representative paddock coordinate taken from Mick's heavier-soil Google Maps link; one SILO cell used for Heavy and Light soils.,-32.85,135.15
+NSW_Griffith,Heavy,-34.194974,146.08877,150,150,300,2024-04-26,2024-09-19,Representative paddock coordinate taken from Mick's light-soil Google Maps link; one SILO cell used for Heavy and Light soils.,-34.2,146.1
+NSW_Griffith,Light,-34.194974,146.08877,150,150,300,2024-04-26,2024-09-19,Representative paddock coordinate taken from Mick's light-soil Google Maps link; one SILO cell used for Heavy and Light soils.,-34.2,146.1

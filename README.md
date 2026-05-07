@@ -18,10 +18,14 @@ PyCLT/
 │   ├── bcg01_demo.py          # Demo using BoM-derived climate (needs generated CSV)
 │   └── generate_bcg01_climate.py  # Build example/data/bcg01_2019_climate.csv from CLT_model/BoM/BCG01
 │
+├── apps/
+│   └── herbicide_workbench/   # Streamlit research app for upload/tune/fit workflows
+│
 ├── examples/data/             # Example datasets
 │   └── bcg01_2019_climate.csv # Daily Tmax/Tmin/rain for BCG01 (built from BoM files)
 │
 ├── requirements.txt           # Python dependencies (pip)
+├── requirements-workbench.txt # Extra dependencies for the Streamlit workbench and tests
 ├── README.md                  # Project overview & instructions
 └── PyCLT_logo.png             # Logo
 ```
@@ -38,6 +42,22 @@ PyCLT/
 - `PyCLT/model.py` — `CLTParameters`, `TwoLayerCLT`, and `run_series` for forward simulations.
 - `examples/synthetic_demo.py` — self-contained demo that stitches climate → ET → infiltration → CLT outputs.
 - `requirements.txt` — minimal dependencies (numpy, pandas; matplotlib optional for plotting).
+
+## Herbicide research workbench
+The repository includes a Streamlit workbench for collaborators to upload climate and observation CSVs, adjust model parameters, run a selected case, fit parameters, and download outputs.
+
+Run locally from the repository root:
+```bash
+pip install -r requirements-workbench.txt
+streamlit run apps/herbicide_workbench/app.py
+```
+
+For Streamlit Community Cloud, deploy this repository from GitHub and set the entrypoint to:
+```text
+apps/herbicide_workbench/app.py
+```
+
+Sample CSVs are available under `apps/herbicide_workbench/sample_data/`. See `apps/herbicide_workbench/README.md` for input column details and collaborator-review notes.
 
 ## Quickstart (synthetic data)
 ```bash

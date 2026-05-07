@@ -1,12 +1,12 @@
-<img src="pyCLT_logo.png" alt="pyCLT logo" align="right" width="180" />
+<img src="pyCLT_logo.png" alt="PyCLT logo" align="right" width="180" />
 
-# pyCLT
+# PyCLT
 
 Python translation of the Convective Log-normal Transfer (CLT) model used to simulate solute movement through soil layers. The original R code combined a simple water-balance with a two-layer residence-time model; this repo keeps the physics but improves structure and readability.
 
 ## Repo layout
 ```
-pyCLT/
+PyCLT/
 ├── pyclt/                     # Core library
 │   ├── __init__.py            # Public exports
 │   ├── climate.py             # Radiation + Priestley–Taylor PET utilities
@@ -23,7 +23,7 @@ pyCLT/
 │
 ├── requirements.txt           # Python dependencies (pip)
 ├── README.md                  # Project overview & instructions
-└── pyCLT_logo.png             # Logo
+└── PyCLT_logo.png             # Logo
 ```
 
 ## What the model does
@@ -33,15 +33,15 @@ pyCLT/
 - Produces relative concentrations (C/C0) over time for the surface and subsoil layers.
 
 ## Layout
-- `pyclt/climate.py` — radiation and PET helpers (`pet_from_temp`, `calc_et`, `transmissivity`, etc.).
-- `pyclt/infiltration.py` — simple cumulative infiltration calculation.
-- `pyclt/model.py` — `CLTParameters`, `TwoLayerCLT`, and `run_series` for forward simulations.
+- `PyCLT/climate.py` — radiation and PET helpers (`pet_from_temp`, `calc_et`, `transmissivity`, etc.).
+- `PyCLT/infiltration.py` — simple cumulative infiltration calculation.
+- `PyCLT/model.py` — `CLTParameters`, `TwoLayerCLT`, and `run_series` for forward simulations.
 - `examples/synthetic_demo.py` — self-contained demo that stitches climate → ET → infiltration → CLT outputs.
 - `requirements.txt` — minimal dependencies (numpy, pandas; matplotlib optional for plotting).
 
 ## Quickstart (synthetic data)
 ```bash
-cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/pyCLT
+cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/PyCLT
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python examples/synthetic_demo.py
@@ -51,7 +51,7 @@ The demo prints a head/tail of simulated concentrations and, if `matplotlib` is 
 ## Example with BoM data (BCG01)
 We can derive a ready-to-use climate CSV from the raw BoM files already present in `CLT_model/BoM/BCG01`.
 ```bash
-cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/pyCLT
+cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/PyCLT
 python examples/generate_bcg01_climate.py        # writes examples/data/bcg01_2019_climate.csv
 python examples/bcg01_demo.py                    # runs CLT on that dataset
 ```

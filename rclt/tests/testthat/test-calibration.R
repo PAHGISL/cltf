@@ -108,6 +108,15 @@ test_that("multistart calibration improves a finite replicate-level objective", 
   expect_true(all(fit$parameters <= upper))
   expect_named(fit$bound_hit, names(lower))
   expect_equal(nrow(fit$predictions), nrow(case$observations))
+  expect_equal(
+    fit$transport_scales,
+    c(
+      top    = fit$parameters["mu"] * fit$parameters["R_top"],
+      bottom = fit$parameters["mu"] * fit$parameters["R_bottom"]
+    ),
+    ignore_attr = TRUE
+  )
+  expect_match(fit$identifiability_note, "products")
 })
 
 test_that("calibration is deterministic for a fixed seed", {

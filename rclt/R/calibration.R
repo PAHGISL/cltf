@@ -87,9 +87,19 @@ rclt_predict_concentrations <- function(
   parameters <- normalize_rclt_parameters(parameters)
   method <- match.arg(method)
 
+  observation_times <- sort(unique(observations$days_since_application))
+  forcing_index <- match(observation_times, forcing$time_days)
+  if (anyNA(forcing_index)) {
+    stop(
+      "Every observation time must occur in forcing$time_days.",
+      call. = FALSE
+    )
+  }
+  simulation_forcing <- forcing[forcing_index, , drop = FALSE]
+
   simulation <- simulate_rclt(
-    time_days                   = forcing$time_days,
-    cumulative_infiltration_mm = forcing$cumulative_infiltration_mm,
+    time_days                   = simulation_forcing$time_days,
+    cumulative_infiltration_mm = simulation_forcing$cumulative_infiltration_mm,
     top_layer                  = cltf_layer(
       parameters["mu"],
       parameters["sigma"],
@@ -115,12 +125,6 @@ rclt_predict_concentrations <- function(
     observations$days_since_application,
     simulation$time_days
   )
-  if (anyNA(time_index)) {
-    stop(
-      "Every observation time must occur in forcing$time_days.",
-      call. = FALSE
-    )
-  }
 
   tolerance <- sqrt(.Machine$double.eps)
   is_top <- abs(observations$depth_top_mm) <= tolerance &
@@ -454,7 +458,15 @@ fit_rclt <- function(
     starts      = starts,
     context     = context,
     penalty     = penalty,
-    control     = control
+    control     = control,
+    transport_scales = c(
+      top = unname(parameters["mu"] * parameters["R_top"]),
+      bottom = unname(parameters["mu"] * parameters["R_bottom"])
+    ),
+    identifiability_note = paste(
+      "The current CLTF equations identify the products mu * R_top and",
+      "mu * R_bottom, not mu and both retardation factors separately."
+    )
   )
   class(fit) <- "rclt_fit"
   fit

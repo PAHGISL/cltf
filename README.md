@@ -4,6 +4,12 @@
 
 Python translation of the Convective Log-normal Transfer (CLT) model used to simulate solute movement through soil layers. The original R code combined a simple water-balance with a two-layer residence-time model; this repo keeps the physics but improves structure and readability.
 
+The actively refined scientific reference is now the `rclt/` R package. Its
+layer-average resident-concentration formulation, conservative two-layer CLTF
+convolution, elapsed-time degradation, data preparation, and calibration must
+be verified before equivalent changes are made to the Python package and web
+demo.
+
 ## Repo layout
 ```
 PyCLT/
@@ -38,8 +44,17 @@ PyCLT/
 - Propagates a relative concentration signal through a two-layer soil profile (0–10 cm and 10–30 cm by default) using lognormal travel-time distributions with layer-specific retardation and decay.
 - Produces relative concentrations (C/C0) over time for the surface and subsoil layers.
 
+The current Python implementation still reflects the earlier relative-
+concentration model. The R reference additionally predicts resident
+concentration in provisionally µg/kg dry soil and should not yet be assumed
+numerically equivalent to Python.
+
 ## Layout
 - `rclt/` — reference R package for the verified two-layer CLTF model. The R implementation is developed and validated before equivalent Python updates.
+- `rclt/examples/run_sa_reference.R` — reproducible SA Minnipa
+  Heavy/Imazapic calibration and plotting workflow.
+- `rclt/reference/` — cached external inputs and committed R reference outputs
+  for future Python-equivalence tests.
 - `PyCLT/climate.py` — radiation and PET helpers (`pet_from_temp`, `calc_et`, `transmissivity`, etc.).
 - `PyCLT/infiltration.py` — simple cumulative infiltration calculation.
 - `PyCLT/model.py` — `CLTParameters`, `TwoLayerCLT`, and `run_series` for forward simulations.

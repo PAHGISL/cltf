@@ -10,13 +10,22 @@
 # Dependencies: testthat, rclt, jsonlite
 
 sa_reference_path <- function(filename) {
-  testthat::test_path(
+  path <- testthat::test_path(
     "..",
     "..",
     "reference",
     "sa_minnipa_heavy_imazapic",
     filename
   )
+  if (!file.exists(path)) {
+    skip(
+      paste(
+        "Full reference artifacts are verified from the source tree and",
+        "are not included in built package tarballs."
+      )
+    )
+  }
+  path
 }
 
 test_that("SA reference artifacts have stable schemas and dimensions", {

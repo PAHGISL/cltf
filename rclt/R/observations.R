@@ -257,7 +257,7 @@ read_herbicide_workbook <- function(
     drop      = TRUE,
     lex.order = TRUE
   )
-  observations$replicate_id <- ave(
+  observations$replicate_id <- stats::ave(
     seq_len(nrow(observations)),
     replicate_group,
     FUN = seq_along

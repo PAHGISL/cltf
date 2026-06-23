@@ -13,6 +13,8 @@ PyCLT/
 │   ├── infiltration.py        # Cumulative infiltration (rain − ET thresholding)
 │   └── model.py               # Two-layer CLT model, parameters, run helper
 │
+├── rclt/                      # Reference R package for verified CLTF development
+│
 ├── examples/                  # Runnable examples/demos
 │   ├── synthetic_demo.py      # Toy climate → ET → infiltration → CLT outputs (self-contained)
 │   ├── bcg01_demo.py          # Demo using BoM-derived climate (needs generated CSV)
@@ -37,6 +39,7 @@ PyCLT/
 - Produces relative concentrations (C/C0) over time for the surface and subsoil layers.
 
 ## Layout
+- `rclt/` — reference R package for the verified two-layer CLTF model. The R implementation is developed and validated before equivalent Python updates.
 - `PyCLT/climate.py` — radiation and PET helpers (`pet_from_temp`, `calc_et`, `transmissivity`, etc.).
 - `PyCLT/infiltration.py` — simple cumulative infiltration calculation.
 - `PyCLT/model.py` — `CLTParameters`, `TwoLayerCLT`, and `run_series` for forward simulations.

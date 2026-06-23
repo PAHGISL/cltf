@@ -113,7 +113,7 @@ two_layer_cdf_scalar <- function(
       ) * cltf_cdf(y_mm - u, bottom_layer)
     }
 
-    return(integrate(
+    return(stats::integrate(
       integrand_log_y,
       lower         = -Inf,
       upper         = log(y_mm),

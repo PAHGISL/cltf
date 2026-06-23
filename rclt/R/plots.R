@@ -394,7 +394,10 @@ plot_objective_profile <- function(profile) {
   parameters <- unique(as.character(profile$parameter))
 
   with_rclt_par({
-    graphics::par(mfrow = grDevices::n2mfrow(length(parameters)))
+    graphics::par(
+      mfrow = grDevices::n2mfrow(length(parameters)),
+      mar   = c(4.2, 5.2, 1.2, 1.0)
+    )
     for (parameter in parameters) {
       selected <- profile$parameter == parameter
       values <- profile[selected, ]

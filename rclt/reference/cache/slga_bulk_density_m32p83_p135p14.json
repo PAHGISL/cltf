@@ -1,0 +1,33 @@
+{
+  "latitude": -32.831,
+  "longitude": 135.1449,
+  "attribute": "Bulk Density (whole earth)",
+  "units": "g/cm3",
+  "retrieved_at_utc": "2026-06-23 07:47:14 UTC",
+  "values": [
+    {
+      "depth_top_cm": 0,
+      "depth_bottom_cm": 5,
+      "estimate_g_cm3": 1.32,
+      "lower_g_cm3": 1.18,
+      "upper_g_cm3": 1.46,
+      "source": "provisional SLGA v2-shaped offline fixture"
+    },
+    {
+      "depth_top_cm": 5,
+      "depth_bottom_cm": 15,
+      "estimate_g_cm3": 1.38,
+      "lower_g_cm3": 1.22,
+      "upper_g_cm3": 1.54,
+      "source": "provisional SLGA v2-shaped offline fixture"
+    },
+    {
+      "depth_top_cm": 15,
+      "depth_bottom_cm": 30,
+      "estimate_g_cm3": 1.43,
+      "lower_g_cm3": 1.28,
+      "upper_g_cm3": 1.58,
+      "source": "provisional SLGA v2-shaped offline fixture"
+    }
+  ]
+}

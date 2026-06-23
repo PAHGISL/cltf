@@ -1,0 +1,4 @@
+"depth_top_mm","depth_bottom_mm","estimate_g_cm3","lower_g_cm3","upper_g_cm3","source"
+0,50,1.32,1.18,1.46,"provisional SLGA v2-shaped offline fixture"
+50,150,1.38,1.22,1.54,"provisional SLGA v2-shaped offline fixture"
+150,300,1.43,1.28,1.58,"provisional SLGA v2-shaped offline fixture"

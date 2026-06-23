@@ -12,7 +12,11 @@ RoxygenNote: 7.3.3
 Depends:
     R (>= 4.2.0)
 Imports:
+    jsonlite,
     stats
 Suggests:
-    testthat (>= 3.0.0)
+    readxl,
+    terra,
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3

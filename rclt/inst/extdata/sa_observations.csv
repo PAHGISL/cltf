@@ -1,0 +1,4 @@
+site_id,soil_group,herbicide,application_date,sample_date,days_since_application,depth_top_mm,depth_bottom_mm,replicate_id,concentration_ug_kg,is_non_detect,detection_limit_ug_kg,is_t0
+SA_Minnipa,Heavy,Imazapic,2024-06-12,2024-06-12,0,0,100,1,16.4,FALSE,,TRUE
+SA_Minnipa,Heavy,Imazapic,2024-06-12,2024-06-27,15,0,100,1,5.8,FALSE,,FALSE
+SA_Minnipa,Heavy,Imazapic,2024-06-12,2024-07-10,28,100,300,1,4.2,FALSE,,FALSE

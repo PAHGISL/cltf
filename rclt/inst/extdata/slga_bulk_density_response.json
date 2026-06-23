@@ -1,0 +1,27 @@
+{
+  "latitude": -32.831016,
+  "longitude": 135.14494,
+  "values": [
+    {
+      "depth_top_cm": 0,
+      "depth_bottom_cm": 5,
+      "estimate_g_cm3": 1.32,
+      "lower_g_cm3": 1.18,
+      "upper_g_cm3": 1.46
+    },
+    {
+      "depth_top_cm": 5,
+      "depth_bottom_cm": 15,
+      "estimate_g_cm3": 1.38,
+      "lower_g_cm3": 1.22,
+      "upper_g_cm3": 1.54
+    },
+    {
+      "depth_top_cm": 15,
+      "depth_bottom_cm": 30,
+      "estimate_g_cm3": 1.43,
+      "lower_g_cm3": 1.28,
+      "upper_g_cm3": 1.58
+    }
+  ]
+}

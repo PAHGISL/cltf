@@ -2,16 +2,16 @@
 % Please edit documentation in R/plots.R
 \name{plot_mass_fractions}
 \alias{plot_mass_fractions}
-\title{Plot RCLT mass fractions through time}
+\title{Plot CLTF mass fractions through time}
 \usage{
 plot_mass_fractions(simulation)
 }
 \arguments{
-\item{simulation}{Simulation table returned by \code{\link[=simulate_rclt]{simulate_rclt()}}.}
+\item{simulation}{Simulation table returned by \code{\link[=simulate_cltf]{simulate_cltf()}}.}
 }
 \value{
 The input data, invisibly.
 }
 \description{
-Plot RCLT mass fractions through time
+Plot CLTF mass fractions through time
 }

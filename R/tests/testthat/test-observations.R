@@ -3,11 +3,11 @@
 # Objective: Verify observation intervals, non-detect handling, summaries, and mass inference.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Tidy observation values and site/depth labels.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "observations").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "observations").
+# Dependencies: testthat, cltf
 
 test_that("site depth labels map to explicit sampling intervals", {
   expect_equal(depth_interval_mm("SA", "10cm"), c(0, 100))

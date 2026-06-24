@@ -7,7 +7,7 @@
 plot_mass_balance(simulation)
 }
 \arguments{
-\item{simulation}{Simulation table returned by \code{\link[=simulate_rclt]{simulate_rclt()}}.}
+\item{simulation}{Simulation table returned by \code{\link[=simulate_cltf]{simulate_cltf()}}.}
 }
 \value{
 The input data, invisibly.

@@ -1,4 +1,4 @@
-# rclt
+# cltf
 
 Reference R implementation of the layered Convective Lognormal Transfer
 Function (CLTF) model. This package is the scientific reference for subsequent
@@ -15,7 +15,7 @@ Python and web-demo updates.
 ## Core example
 
 ```r
-library(rclt)
+library(cltf)
 
 top <- cltf_layer(
   mu           = 1,
@@ -30,7 +30,7 @@ bottom <- cltf_layer(
   thickness_mm = 200
 )
 
-result <- simulate_rclt(
+result <- simulate_cltf(
   time_days                   = 0:30,
   cumulative_infiltration_mm = seq(0, 150, length.out = 31),
   top_layer                  = top,
@@ -81,7 +81,7 @@ infiltration.
 
 ## Calibration interpretation
 
-`fit_rclt()` fits shared `mu` and `sigma`, layer-specific `R_top` and
+`fit_cltf()` fits shared `mu` and `sigma`, layer-specific `R_top` and
 `R_bottom`, and one elapsed-time degradation rate `k`. It reports all starts,
 convergence, bound hits, fitted replicate predictions, and objective profiles.
 
@@ -95,10 +95,10 @@ object exposes the two transport scales and an explicit identifiability note.
 Run from the repository root:
 
 ```bash
-Rscript rclt/examples/run_sa_reference.R \
+Rscript examples/R/run_sa_reference.R \
   --workbook "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx" \
-  --cache-dir "rclt/reference/cache" \
-  --output-dir "rclt/reference/sa_minnipa_heavy_imazapic"
+  --cache-dir "reference/cache" \
+  --output-dir "reference/sa_minnipa_heavy_imazapic"
 ```
 
 The workflow writes prepared observations, climate forcing, bulk density,

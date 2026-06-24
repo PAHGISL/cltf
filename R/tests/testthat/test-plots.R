@@ -1,15 +1,15 @@
 #!/usr/bin/env Rscript
 # Script: test-plots.R
-# Objective: Verify that all base-R RCLT diagnostic plots render to PNG files.
+# Objective: Verify that all base-R CLTF diagnostic plots render to PNG files.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Small deterministic forcing, prediction, simulation, profile, and soil tables.
 # Outputs: Non-empty temporary PNG files and testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "plots").
-# Dependencies: testthat, rclt, withr
+# Usage: Loaded by testthat::test_local("R", filter = "plots").
+# Dependencies: testthat, cltf, withr
 
-expect_rclt_plot <- function(draw) {
+expect_cltf_plot <- function(draw) {
   path <- tempfile(fileext = ".png")
   grDevices::png(path, width = 900, height = 650, res = 120)
   device <- grDevices::dev.cur()
@@ -94,19 +94,19 @@ plot_test_data <- function() {
 
 test_that("climate and soil input plots render", {
   data <- plot_test_data()
-  expect_rclt_plot(function() plot_climate_forcing(data$forcing))
-  expect_rclt_plot(function() plot_bulk_density(data$bulk_density))
+  expect_cltf_plot(function() plot_climate_forcing(data$forcing))
+  expect_cltf_plot(function() plot_bulk_density(data$bulk_density))
 })
 
 test_that("fit diagnostic plots render", {
   data <- plot_test_data()
-  expect_rclt_plot(function() plot_observed_fitted(data$predictions))
-  expect_rclt_plot(function() plot_residuals(data$predictions))
-  expect_rclt_plot(function() plot_objective_profile(data$profile))
+  expect_cltf_plot(function() plot_observed_fitted(data$predictions))
+  expect_cltf_plot(function() plot_residuals(data$predictions))
+  expect_cltf_plot(function() plot_objective_profile(data$profile))
 })
 
 test_that("mass diagnostic plots render", {
   data <- plot_test_data()
-  expect_rclt_plot(function() plot_mass_fractions(data$simulation))
-  expect_rclt_plot(function() plot_mass_balance(data$simulation))
+  expect_cltf_plot(function() plot_mass_fractions(data$simulation))
+  expect_cltf_plot(function() plot_mass_balance(data$simulation))
 })

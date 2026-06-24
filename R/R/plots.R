@@ -1,23 +1,23 @@
 # Script: plots.R
-# Objective: Produce base-R diagnostic plots for RCLT inputs, fits, and mass balance.
+# Objective: Produce base-R diagnostic plots for CLTF inputs, fits, and mass balance.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Climate, soil, prediction, simulation, and objective-profile tables.
 # Outputs: Graphics on the active R device.
 # Usage: Open a graphics device, call an exported plot function, then close the device.
 # Dependencies: grDevices, graphics
 
-rclt_plot_family <- function() {
+cltf_plot_family <- function() {
   fonts <- names(grDevices::pdfFonts())
   if ("Arial" %in% fonts) "Arial" else "sans"
 }
 
-with_rclt_par <- function(code) {
+with_cltf_par <- function(code) {
   old <- graphics::par(no.readonly = TRUE)
   on.exit(graphics::par(old), add = TRUE)
   graphics::par(
-    family = rclt_plot_family(),
+    family = cltf_plot_family(),
     mar    = c(4.2, 4.5, 1.2, 1.0),
     las    = 1
   )
@@ -36,7 +36,7 @@ require_plot_columns <- function(data, columns, object_name) {
   }
 }
 
-rclt_layer_label <- function(depth_top_mm, depth_bottom_mm) {
+cltf_layer_label <- function(depth_top_mm, depth_bottom_mm) {
   paste0(depth_top_mm, "\u2013", depth_bottom_mm, " mm")
 }
 
@@ -62,7 +62,7 @@ plot_climate_forcing <- function(forcing) {
     stop("forcing must contain date or time_days.", call. = FALSE)
   }
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::par(mfrow = c(2, 1), mar = c(3.2, 4.5, 1.2, 1.0))
     water_limit <- range(
       c(0, forcing$rain_mm, forcing$pet_mm),
@@ -145,7 +145,7 @@ geometric_plot_summary <- function(predictions) {
 
 #' Plot replicate observations, geometric means, and fitted concentrations
 #'
-#' @param predictions Fit prediction table returned by [fit_rclt()].
+#' @param predictions Fit prediction table returned by [fit_cltf()].
 #' @return The input data, invisibly.
 #' @export
 plot_observed_fitted <- function(predictions) {
@@ -168,7 +168,7 @@ plot_observed_fitted <- function(predictions) {
   if (length(positive) == 0L) {
     stop("predictions contain no positive concentrations to plot.", call. = FALSE)
   }
-  layer <- rclt_layer_label(
+  layer <- cltf_layer_label(
     predictions$depth_top_mm,
     predictions$depth_bottom_mm
   )
@@ -177,7 +177,7 @@ plot_observed_fitted <- function(predictions) {
   names(colors) <- layers
   geometric <- geometric_plot_summary(predictions)
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::plot(
       range(predictions$days_since_application, finite = TRUE),
       range(positive, finite = TRUE),
@@ -213,7 +213,7 @@ plot_observed_fitted <- function(predictions) {
         col = colors[current_layer]
       )
 
-      geometric_layer <- rclt_layer_label(
+      geometric_layer <- cltf_layer_label(
         geometric$depth_top_mm,
         geometric$depth_bottom_mm
       ) == current_layer
@@ -244,7 +244,7 @@ plot_observed_fitted <- function(predictions) {
 
 #' Plot log residuals against fitted concentration
 #'
-#' @param predictions Fit prediction table returned by [fit_rclt()].
+#' @param predictions Fit prediction table returned by [fit_cltf()].
 #' @return The input data, invisibly.
 #' @export
 plot_residuals <- function(predictions) {
@@ -270,7 +270,7 @@ plot_residuals <- function(predictions) {
   if (!any(usable)) {
     stop("predictions contain no finite log residuals.", call. = FALSE)
   }
-  layer <- rclt_layer_label(
+  layer <- cltf_layer_label(
     predictions$depth_top_mm,
     predictions$depth_bottom_mm
   )
@@ -278,7 +278,7 @@ plot_residuals <- function(predictions) {
   colors <- rep(c("#0072B2", "#D55E00", "#009E73", "#CC79A7"), length.out = length(layers))
   names(colors) <- layers
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::plot(
       predictions$predicted_concentration_ug_kg[usable],
       residual[usable],
@@ -300,9 +300,9 @@ plot_residuals <- function(predictions) {
   invisible(predictions)
 }
 
-#' Plot RCLT mass fractions through time
+#' Plot CLTF mass fractions through time
 #'
-#' @param simulation Simulation table returned by [simulate_rclt()].
+#' @param simulation Simulation table returned by [simulate_cltf()].
 #' @return The input data, invisibly.
 #' @export
 plot_mass_fractions <- function(simulation) {
@@ -319,7 +319,7 @@ plot_mass_fractions <- function(simulation) {
   )
   colors <- c("#0072B2", "#D55E00", "#009E73", "#777777")
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::matplot(
       simulation$time_days,
       simulation[mass_columns],
@@ -364,7 +364,7 @@ plot_mass_balance <- function(simulation) {
   deviation <- total - 1
   limit <- max(abs(deviation), 1e-12)
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::plot(
       simulation$time_days,
       deviation,
@@ -382,7 +382,7 @@ plot_mass_balance <- function(simulation) {
 
 #' Plot one or more objective profiles
 #'
-#' @param profile Profile table returned by [profile_rclt_parameter()].
+#' @param profile Profile table returned by [profile_cltf_parameter()].
 #' @return The input data, invisibly.
 #' @export
 plot_objective_profile <- function(profile) {
@@ -393,7 +393,7 @@ plot_objective_profile <- function(profile) {
   )
   parameters <- unique(as.character(profile$parameter))
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::par(
       mfrow = grDevices::n2mfrow(length(parameters)),
       mar   = c(4.2, 5.2, 1.2, 1.0)
@@ -448,7 +448,7 @@ plot_bulk_density <- function(bulk_density) {
     finite = TRUE
   ))
 
-  with_rclt_par({
+  with_cltf_par({
     graphics::plot(
       x_limit,
       y_limit,

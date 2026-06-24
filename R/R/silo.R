@@ -2,10 +2,10 @@
 # Objective: Retrieve and parse cached SILO point climate data.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Coordinates, date range, SILO credentials, and cache directory.
 # Outputs: Daily rainfall and temperature forcing with source metadata.
-# Usage: Use fetch_silo_point() or parse_silo_csv() after library(rclt).
+# Usage: Use fetch_silo_point() or parse_silo_csv() after library(cltf).
 # Dependencies: jsonlite, utils
 
 #' Round a coordinate to the SILO 0.05-degree grid
@@ -23,7 +23,7 @@ round_silo_coordinate <- function(value) {
 #' Parse a SILO Data Drill CSV
 #'
 #' @param path Path to a SILO CSV response.
-#' @return Data frame with standard RCLT climate fields.
+#' @return Data frame with standard CLTF climate fields.
 #' @export
 parse_silo_csv <- function(path) {
   if (!file.exists(path)) {

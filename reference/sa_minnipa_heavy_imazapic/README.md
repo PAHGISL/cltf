@@ -1,6 +1,6 @@
 # SA Minnipa Heavy/Imazapic reference case
 
-This directory is the first reproducible RCLT calibration case and will be the
+This directory is the first reproducible CLTF calibration case and will be the
 numerical fixture for the later Python translation.
 
 The target is layer-average resident concentration for 0–100 mm and 100–300 mm.
@@ -11,7 +11,7 @@ rows are excluded from calibration.
 
 The climate forcing covers June 12 through October 28, 2024 at the SILO grid
 cell centred on -32.85, 135.15. The committed cache was normalized from the
-existing PyCLT demo extraction of the SILO 2024 gridded archive. A future
+existing 2024 SILO gridded-archive extraction. A future
 credentialed SILO Data Drill request should be compared against this cache
 before replacing it.
 
@@ -62,10 +62,10 @@ The next scientific decision should be either:
 From the repository root:
 
 ```bash
-Rscript rclt/examples/run_sa_reference.R \
+Rscript examples/R/run_sa_reference.R \
   --workbook "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx" \
-  --cache-dir "rclt/reference/cache" \
-  --output-dir "rclt/reference/sa_minnipa_heavy_imazapic"
+  --cache-dir "reference/cache" \
+  --output-dir "reference/sa_minnipa_heavy_imazapic"
 ```
 
 With the committed caches present, no SILO or TERN credentials are required.

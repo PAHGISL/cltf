@@ -1,10 +1,11 @@
-Package: rclt
+Package: cltf
 Type: Package
-Title: Convective Lognormal Transfer Model for Layered Herbicide Transport
+Title: Convective Lognormal Transfer Function for Herbicide Dynamics
 Version: 0.1.0
 Authors@R: person("Yi", "Yu", email = "yi.yu.phd@gmail.com", role = c("aut", "cre"))
-Description: Reference R implementation of a two-layer convective lognormal
-    transfer model for layer-average resident herbicide concentration.
+Description: Independent R implementation of the two-layer convective
+    lognormal transfer function for layer-average resident herbicide
+    concentration.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

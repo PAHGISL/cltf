@@ -3,11 +3,11 @@
 # Objective: Verify two-layer convolution and conservative layer partitioning.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
-# Inputs: rclt two-layer CLTF functions.
+# Last updated: 2026-06-24
+# Inputs: cltf two-layer CLTF functions.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "cltf-two-layer").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "cltf-two-layer").
+# Dependencies: testthat, cltf
 
 test_that("adaptive and trapezoidal convolution agree", {
   top      <- top_layer_fixture()
@@ -75,7 +75,7 @@ test_that("convolution remains stable for difficult layer parameters", {
 
 test_that("material numerical imbalance is not silently clipped", {
   expect_error(
-    rclt:::validate_layer_probabilities(
+    cltf:::validate_layer_probabilities(
       matrix(c(0.5, -0.1, 0.6), nrow = 1),
       tolerance = 1e-8
     ),

@@ -2,10 +2,10 @@
 # Objective: Convert CLTF mass fractions into layer-average dry-soil concentrations.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Application rate, layer mass fractions, depth, bulk density, and porosity.
 # Outputs: Soil masses, degraded mass fractions, and concentrations in micrograms per kilogram.
-# Usage: Use exported functions after library(rclt).
+# Usage: Use exported functions after library(cltf).
 # Dependencies: base R
 
 #' Calculate dry soil mass per hectare

@@ -2,10 +2,10 @@
 # Objective: Implement validated single- and two-layer CLTF transport calculations.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Layer parameters and cumulative infiltration values.
 # Outputs: Transfer densities, cumulative probabilities, and layer mass fractions.
-# Usage: Use exported functions after library(rclt).
+# Usage: Use exported functions after library(cltf).
 # Dependencies: stats
 
 validate_positive_scalar <- function(value, name) {
@@ -21,7 +21,7 @@ validate_positive_scalar <- function(value, name) {
 #' @param sigma Positive lognormal log-scale standard deviation.
 #' @param retardation Positive retardation factor.
 #' @param thickness_mm Positive layer thickness in millimetres.
-#' @return A validated `rclt_layer` list.
+#' @return A validated `cltf_layer` list.
 #' @export
 cltf_layer <- function(mu, sigma, retardation, thickness_mm) {
   validate_positive_scalar(mu, "mu")
@@ -36,12 +36,12 @@ cltf_layer <- function(mu, sigma, retardation, thickness_mm) {
       retardation  = as.numeric(retardation),
       thickness_mm = as.numeric(thickness_mm)
     ),
-    class = "rclt_layer"
+    class = "cltf_layer"
   )
 }
 
 validate_layer <- function(layer) {
-  if (!inherits(layer, "rclt_layer")) {
+  if (!inherits(layer, "cltf_layer")) {
     stop("layer must be created by cltf_layer().", call. = FALSE)
   }
   invisible(layer)

@@ -2,13 +2,13 @@
 # Objective: Run conservative two-layer CLTF simulations over forcing time series.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Time, cumulative infiltration, layer parameters, degradation, mass, and soil properties.
 # Outputs: Time-indexed mass fractions and resident concentrations.
-# Usage: Use simulate_rclt() after library(rclt).
+# Usage: Use simulate_cltf() after library(cltf).
 # Dependencies: base R
 
-#' Simulate a two-layer RCLT time series
+#' Simulate a two-layer CLTF time series
 #'
 #' @param time_days Non-decreasing elapsed times.
 #' @param cumulative_infiltration_mm Non-decreasing cumulative infiltration.
@@ -20,7 +20,7 @@
 #' @param method,n_steps,rel_tol Convolution settings.
 #' @return Data frame of forcing, mass balance, and layer concentrations.
 #' @export
-simulate_rclt <- function(
+simulate_cltf <- function(
   time_days,
   cumulative_infiltration_mm,
   top_layer,

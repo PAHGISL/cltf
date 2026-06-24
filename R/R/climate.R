@@ -1,11 +1,11 @@
 # Script: climate.R
-# Objective: Reproduce the PyCLT temperature-based Priestley-Taylor PET calculation.
+# Objective: Calculate temperature-based Priestley-Taylor PET for CLTF forcing.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Day-of-year, daily temperature, latitude, and radiation parameters.
 # Outputs: Potential evapotranspiration in millimetres per day.
-# Usage: Use pet_from_temperature() after library(rclt).
+# Usage: Use pet_from_temperature() after library(cltf).
 # Dependencies: base R
 
 solar_declination <- function(jday) {

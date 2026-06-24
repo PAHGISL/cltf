@@ -1,19 +1,19 @@
 # Script: calibration.R
-# Objective: Fit the two-layer RCLT model to replicate-level log concentrations.
+# Objective: Fit the two-layer CLTF model to replicate-level log concentrations.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Prepared observations, cumulative infiltration, soil properties, and bounds.
 # Outputs: Multistart parameter fits, predictions, bound flags, and objective profiles.
-# Usage: Use fit_rclt() and profile_rclt_parameter() after library(rclt).
+# Usage: Use fit_cltf() and profile_cltf_parameter() after library(cltf).
 # Dependencies: stats
 
-rclt_parameter_names <- function() {
+cltf_parameter_names <- function() {
   c("mu", "sigma", "R_top", "R_bottom", "k")
 }
 
-normalize_rclt_parameters <- function(parameters, argument = "parameters") {
-  required <- rclt_parameter_names()
+normalize_cltf_parameters <- function(parameters, argument = "parameters") {
+  required <- cltf_parameter_names()
   if (!is.numeric(parameters) || length(parameters) != length(required)) {
     stop(argument, " must contain five numeric values.", call. = FALSE)
   }
@@ -69,7 +69,7 @@ validate_calibration_data <- function(observations, forcing) {
   invisible(TRUE)
 }
 
-rclt_predict_concentrations <- function(
+cltf_predict_concentrations <- function(
   parameters,
   observations,
   forcing,
@@ -84,7 +84,7 @@ rclt_predict_concentrations <- function(
   rel_tol             = 1e-8
 ) {
   validate_calibration_data(observations, forcing)
-  parameters <- normalize_rclt_parameters(parameters)
+  parameters <- normalize_cltf_parameters(parameters)
   method <- match.arg(method)
 
   observation_times <- sort(unique(observations$days_since_application))
@@ -97,7 +97,7 @@ rclt_predict_concentrations <- function(
   }
   simulation_forcing <- forcing[forcing_index, , drop = FALSE]
 
-  simulation <- simulate_rclt(
+  simulation <- simulate_cltf(
     time_days                   = simulation_forcing$time_days,
     cumulative_infiltration_mm = simulation_forcing$cumulative_infiltration_mm,
     top_layer                  = cltf_layer(
@@ -152,7 +152,7 @@ rclt_predict_concentrations <- function(
   prediction
 }
 
-#' Calculate the replicate-level RCLT calibration objective
+#' Calculate the replicate-level CLTF calibration objective
 #'
 #' @param parameters Named `mu`, `sigma`, `R_top`, `R_bottom`, and `k` values.
 #' @param observations Prepared observations containing analysis concentrations,
@@ -162,11 +162,11 @@ rclt_predict_concentrations <- function(
 #' @param top_bulk_density_g_cm3,bottom_bulk_density_g_cm3 Layer bulk densities.
 #' @param top_thickness_mm,bottom_thickness_mm Model layer thicknesses.
 #' @param effective_porosity Empirical concentration scale.
-#' @param method,n_steps,rel_tol Convolution settings passed to [simulate_rclt()].
+#' @param method,n_steps,rel_tol Convolution settings passed to [simulate_cltf()].
 #' @param penalty Finite objective returned for invalid model predictions.
 #' @return Root mean squared log-concentration residual.
 #' @export
-rclt_objective <- function(
+cltf_objective <- function(
   parameters,
   observations,
   forcing,
@@ -184,7 +184,7 @@ rclt_objective <- function(
   method <- match.arg(method)
   result <- tryCatch(
     {
-      prediction <- rclt_predict_concentrations(
+      prediction <- cltf_predict_concentrations(
         parameters,
         observations,
         forcing,
@@ -212,7 +212,7 @@ rclt_objective <- function(
   if (!is.finite(result)) penalty else min(result, penalty)
 }
 
-generate_rclt_starts <- function(initial, lower, upper, n_starts, seed) {
+generate_cltf_starts <- function(initial, lower, upper, n_starts, seed) {
   if (
     length(n_starts) != 1L ||
       !is.finite(n_starts) ||
@@ -258,9 +258,9 @@ generate_rclt_starts <- function(initial, lower, upper, n_starts, seed) {
   starts
 }
 
-rclt_fit_predictions <- function(fit_parameters, context) {
+cltf_fit_predictions <- function(fit_parameters, context) {
   prediction <- do.call(
-    rclt_predict_concentrations,
+    cltf_predict_concentrations,
     c(list(parameters = fit_parameters), context)
   )
   result <- context$observations
@@ -277,16 +277,16 @@ rclt_fit_predictions <- function(fit_parameters, context) {
   result
 }
 
-rclt_bound_hits <- function(parameters, lower, upper, tolerance) {
+cltf_bound_hits <- function(parameters, lower, upper, tolerance) {
   scale <- pmax(1, abs(lower), abs(upper), abs(upper - lower))
   near_lower <- abs(parameters - lower) <= tolerance * scale
   near_upper <- abs(parameters - upper) <= tolerance * scale
   stats::setNames(near_lower | near_upper, names(parameters))
 }
 
-#' Fit the RCLT model with deterministic multistart optimization
+#' Fit the CLTF model with deterministic multistart optimization
 #'
-#' @inheritParams rclt_objective
+#' @inheritParams cltf_objective
 #' @param lower,upper Named parameter bounds.
 #' @param initial Optional first optimization start.
 #' @param starts Optional matrix of explicit starts, one per row.
@@ -294,9 +294,9 @@ rclt_bound_hits <- function(parameters, lower, upper, tolerance) {
 #' @param seed Random seed for generated starts.
 #' @param bound_tolerance Relative tolerance for reporting bound hits.
 #' @param control Control list passed to [stats::optim()].
-#' @return An `rclt_fit` list containing the best fit and all start results.
+#' @return An `cltf_fit` list containing the best fit and all start results.
 #' @export
-fit_rclt <- function(
+fit_cltf <- function(
   observations,
   forcing,
   application_rate_g_ha,
@@ -338,9 +338,9 @@ fit_rclt <- function(
 ) {
   method <- match.arg(method)
   validate_calibration_data(observations, forcing)
-  lower <- normalize_rclt_parameters(lower, "lower")
-  upper <- normalize_rclt_parameters(upper, "upper")
-  initial <- normalize_rclt_parameters(initial, "initial")
+  lower <- normalize_cltf_parameters(lower, "lower")
+  upper <- normalize_cltf_parameters(upper, "upper")
+  initial <- normalize_cltf_parameters(initial, "initial")
   if (any(lower >= upper)) {
     stop("Every lower parameter bound must be below its upper bound.", call. = FALSE)
   }
@@ -349,7 +349,7 @@ fit_rclt <- function(
   }
 
   if (is.null(starts)) {
-    starts <- generate_rclt_starts(
+    starts <- generate_cltf_starts(
       initial,
       lower,
       upper,
@@ -389,7 +389,7 @@ fit_rclt <- function(
   )
   objective <- function(parameters) {
     do.call(
-      rclt_objective,
+      cltf_objective,
       c(
         list(parameters = parameters),
         context,
@@ -421,7 +421,7 @@ fit_rclt <- function(
   objectives <- vapply(results, function(result) result$value, numeric(1))
   best_index <- which.min(objectives)
   best <- results[[best_index]]
-  parameters <- normalize_rclt_parameters(best$par)
+  parameters <- normalize_cltf_parameters(best$par)
 
   start_rows <- lapply(seq_along(results), function(index) {
     result <- results[[index]]
@@ -445,13 +445,13 @@ fit_rclt <- function(
     convergence = best$convergence,
     message     = if (is.null(best$message)) "" else best$message,
     start_index = best_index,
-    bound_hit   = rclt_bound_hits(
+    bound_hit   = cltf_bound_hits(
       parameters,
       lower,
       upper,
       bound_tolerance
     ),
-    predictions = rclt_fit_predictions(parameters, context),
+    predictions = cltf_fit_predictions(parameters, context),
     all_starts  = do.call(rbind, start_rows),
     lower       = lower,
     upper       = upper,
@@ -468,29 +468,29 @@ fit_rclt <- function(
       "mu * R_bottom, not mu and both retardation factors separately."
     )
   )
-  class(fit) <- "rclt_fit"
+  class(fit) <- "cltf_fit"
   fit
 }
 
-#' Profile one fitted RCLT parameter
+#' Profile one fitted CLTF parameter
 #'
-#' @param fit Result returned by [fit_rclt()].
+#' @param fit Result returned by [fit_cltf()].
 #' @param parameter Name of the parameter to hold fixed.
 #' @param grid Finite profile values within the fitted bounds.
 #' @param control Control list passed to [stats::optim()].
 #' @return Data frame of fixed values, re-optimized parameters, and objectives.
 #' @export
-profile_rclt_parameter <- function(
+profile_cltf_parameter <- function(
   fit,
   parameter,
   grid,
   control = fit$control
 ) {
-  if (!inherits(fit, "rclt_fit")) {
-    stop("fit must be returned by fit_rclt().", call. = FALSE)
+  if (!inherits(fit, "cltf_fit")) {
+    stop("fit must be returned by fit_cltf().", call. = FALSE)
   }
   if (length(parameter) != 1L || !parameter %in% names(fit$parameters)) {
-    stop("parameter must name one fitted RCLT parameter.", call. = FALSE)
+    stop("parameter must name one fitted CLTF parameter.", call. = FALSE)
   }
   if (
     !is.numeric(grid) ||
@@ -510,7 +510,7 @@ profile_rclt_parameter <- function(
       parameters[parameter] <- fixed_value
       parameters[remaining] <- free_parameters
       do.call(
-        rclt_objective,
+        cltf_objective,
         c(
           list(parameters = parameters),
           fit$context,

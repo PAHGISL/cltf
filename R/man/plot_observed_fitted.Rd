@@ -7,7 +7,7 @@
 plot_observed_fitted(predictions)
 }
 \arguments{
-\item{predictions}{Fit prediction table returned by \code{\link[=fit_rclt]{fit_rclt()}}.}
+\item{predictions}{Fit prediction table returned by \code{\link[=fit_cltf]{fit_cltf()}}.}
 }
 \value{
 The input data, invisibly.

@@ -3,11 +3,11 @@
 # Objective: Verify the mathematical definition and validation of one CLTF layer.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
-# Inputs: rclt single-layer functions.
+# Last updated: 2026-06-24
+# Inputs: cltf single-layer functions.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "cltf-single-layer").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "cltf-single-layer").
+# Dependencies: testthat, cltf
 
 test_that("cltf_layer validates physical parameters", {
   expect_error(cltf_layer(0, 0.5, 2, 100), "mu")

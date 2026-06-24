@@ -23,7 +23,7 @@
     "non_detect_substitutions": 0
   },
   "silo": {
-    "source": "Existing PyCLT demo extraction from the SILO 2024 gridded archive; normalized to the SILO Data Drill cache schema",
+    "source": "Existing 2024 SILO gridded-archive extraction normalized to the SILO Data Drill cache schema",
     "request_latitude": -32.831,
     "request_longitude": 135.1449,
     "returned_latitude": -32.85,

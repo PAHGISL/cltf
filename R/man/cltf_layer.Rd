@@ -16,7 +16,7 @@ cltf_layer(mu, sigma, retardation, thickness_mm)
 \item{thickness_mm}{Positive layer thickness in millimetres.}
 }
 \value{
-A validated \code{rclt_layer} list.
+A validated \code{cltf_layer} list.
 }
 \description{
 Define one CLTF soil layer

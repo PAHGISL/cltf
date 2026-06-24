@@ -3,11 +3,11 @@
 # Objective: Verify degradation, soil-mass, and resident-concentration calculations.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
-# Inputs: rclt mass and concentration functions.
+# Last updated: 2026-06-24
+# Inputs: cltf mass and concentration functions.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "concentration").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "concentration").
+# Dependencies: testthat, cltf
 
 test_that("soil mass uses depth interval and bulk density", {
   expect_equal(

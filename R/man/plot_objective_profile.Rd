@@ -7,7 +7,7 @@
 plot_objective_profile(profile)
 }
 \arguments{
-\item{profile}{Profile table returned by \code{\link[=profile_rclt_parameter]{profile_rclt_parameter()}}.}
+\item{profile}{Profile table returned by \code{\link[=profile_cltf_parameter]{profile_cltf_parameter()}}.}
 }
 \value{
 The input data, invisibly.

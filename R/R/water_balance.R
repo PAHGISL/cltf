@@ -2,10 +2,10 @@
 # Objective: Convert daily water inputs and ET into cumulative infiltration and first-passage times.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Daily rainfall, irrigation, ET, and monotone cumulative infiltration.
 # Outputs: Daily infiltration, cumulative infiltration, and first-passage times.
-# Usage: Use exported functions after library(rclt).
+# Usage: Use exported functions after library(cltf).
 # Dependencies: base R
 
 #' Calculate daily net infiltration

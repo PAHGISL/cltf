@@ -10,7 +10,7 @@ parse_silo_csv(path)
 \item{path}{Path to a SILO CSV response.}
 }
 \value{
-Data frame with standard RCLT climate fields.
+Data frame with standard CLTF climate fields.
 }
 \description{
 Parse a SILO Data Drill CSV

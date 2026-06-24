@@ -3,14 +3,15 @@
 # Objective: Lock the committed SA Minnipa Heavy/Imazapic reference artifacts.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Committed reference CSV and JSON outputs.
 # Outputs: Structural, mass-balance, parameter-bound, and forward-model assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "sa-regression").
-# Dependencies: testthat, rclt, jsonlite
+# Usage: Loaded by testthat::test_local("R", filter = "sa-regression").
+# Dependencies: testthat, cltf, jsonlite
 
 sa_reference_path <- function(filename) {
   path <- testthat::test_path(
+    "..",
     "..",
     "..",
     "reference",
@@ -91,7 +92,7 @@ test_that("SA cached inputs reproduce the committed forward predictions", {
   top_density <- weight_bulk_density(bulk_density, 0, 100)$estimate_g_cm3
   bottom_density <- weight_bulk_density(bulk_density, 100, 300)$estimate_g_cm3
 
-  rerun <- simulate_rclt(
+  rerun <- simulate_cltf(
     time_days                   = forcing$time_days,
     cumulative_infiltration_mm = forcing$cumulative_infiltration_mm,
     top_layer                  = cltf_layer(

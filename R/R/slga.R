@@ -2,10 +2,10 @@
 # Objective: Retrieve, normalize, and depth-weight SLGA whole-earth bulk density.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Coordinates, TERN API credentials, cached JSON, or manual overrides.
 # Outputs: Standard bulk-density bands and depth-weighted estimates in g/cm3.
-# Usage: Use fetch_slga_bulk_density() and weight_bulk_density() after library(rclt).
+# Usage: Use fetch_slga_bulk_density() and weight_bulk_density() after library(cltf).
 # Dependencies: jsonlite; terra is optional for direct COG fallback.
 
 slga_standard_depths <- function() {

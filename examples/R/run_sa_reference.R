@@ -159,7 +159,7 @@ materialize_climate_cache <- function(
       }
       metadata <- list(
         source = paste(
-          "Existing PyCLT demo extraction from the SILO 2024 gridded archive;",
+          "Existing 2024 SILO gridded-archive extraction;",
           "normalized to the SILO Data Drill cache schema"
         ),
         source_file        = source_label,
@@ -258,7 +258,7 @@ build_profiles <- function(fit) {
       (fit$parameters[parameter] + upper) / 2,
       upper
     ))
-    profile_rclt_parameter(
+    profile_cltf_parameter(
       fit,
       parameter = parameter,
       grid      = grid,
@@ -384,7 +384,7 @@ upper <- c(
   R_bottom = 30,
   k        = 0.05
 )
-fit <- fit_rclt(
+fit <- fit_cltf(
   observations               = calibration_observations,
   forcing                    = forcing,
   application_rate_g_ha      = application_rate_g_ha,
@@ -409,7 +409,7 @@ fit <- fit_rclt(
   control                    = list(maxit = 250)
 )
 
-simulation <- simulate_rclt(
+simulation <- simulate_cltf(
   time_days                   = forcing$time_days,
   cumulative_infiltration_mm = forcing$cumulative_infiltration_mm,
   top_layer                  = cltf_layer(

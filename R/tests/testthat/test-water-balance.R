@@ -3,11 +3,11 @@
 # Objective: Verify threshold water balance and generalized infiltration inverse.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Rainfall, irrigation, ET, cumulative infiltration, and target levels.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "water-balance").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "water-balance").
+# Dependencies: testthat, cltf
 
 test_that("daily infiltration includes irrigation and ET thresholding", {
   expect_equal(

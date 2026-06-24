@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 # Script: helper-fixtures.R
-# Objective: Provide reusable validated layer fixtures for rclt tests.
+# Objective: Provide reusable validated layer fixtures for cltf tests.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: None.
 # Outputs: Test helper functions.
 # Usage: Loaded automatically by testthat.
-# Dependencies: testthat, rclt
+# Dependencies: testthat, cltf
 
 top_layer_fixture <- function() {
   cltf_layer(

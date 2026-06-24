@@ -3,11 +3,11 @@
 # Objective: Verify R temperature-based PET against the current Python reference values.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Daily day-of-year and maximum/minimum temperatures.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "climate").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "climate").
+# Dependencies: testthat, cltf
 
 test_that("temperature PET matches the Python climate module", {
   result <- pet_from_temperature(

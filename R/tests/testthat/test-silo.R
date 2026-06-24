@@ -3,11 +3,11 @@
 # Objective: Verify SILO coordinate rounding, CSV parsing, and cache-first retrieval.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Cached SILO CSV fixtures and injected download functions.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "silo").
-# Dependencies: testthat, rclt, withr
+# Usage: Loaded by testthat::test_local("R", filter = "silo").
+# Dependencies: testthat, cltf, withr
 
 test_that("SILO coordinates round to the nearest grid cell", {
   expect_equal(round_silo_coordinate(-32.831016), -32.85)
@@ -15,7 +15,7 @@ test_that("SILO coordinates round to the nearest grid cell", {
 })
 
 test_that("SILO CSV parser returns standard forcing fields", {
-  path <- system.file("extdata", "sa_silo.csv", package = "rclt")
+  path <- system.file("extdata", "sa_silo.csv", package = "cltf")
   result <- parse_silo_csv(path)
 
   expect_equal(
@@ -29,7 +29,7 @@ test_that("SILO CSV parser returns standard forcing fields", {
 
 test_that("SILO retrieval reuses an existing cache", {
   cache_dir <- withr::local_tempdir()
-  fixture <- system.file("extdata", "sa_silo.csv", package = "rclt")
+  fixture <- system.file("extdata", "sa_silo.csv", package = "cltf")
   calls <- 0L
   downloader <- function(url, destfile, quiet, mode) {
     calls <<- calls + 1L

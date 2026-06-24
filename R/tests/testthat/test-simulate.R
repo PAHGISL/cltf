@@ -3,14 +3,14 @@
 # Objective: Verify end-to-end time-series CLTF simulation and limiting cases.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
-# Inputs: rclt simulator and fixed model inputs.
+# Last updated: 2026-06-24
+# Inputs: cltf simulator and fixed model inputs.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "simulate").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "simulate").
+# Dependencies: testthat, cltf
 
 test_that("simulation starts with all undegraded mass in the top layer", {
-  result <- simulate_rclt(
+  result <- simulate_cltf(
     time_days                   = c(0, 10),
     cumulative_infiltration_mm = c(0, 0),
     top_layer                  = top_layer_fixture(),
@@ -35,7 +35,7 @@ test_that("simulation starts with all undegraded mass in the top layer", {
 
 test_that("simulation rejects decreasing forcing", {
   expect_error(
-    simulate_rclt(
+    simulate_cltf(
       time_days                   = c(0, 2, 1),
       cumulative_infiltration_mm = c(0, 5, 10),
       top_layer                  = top_layer_fixture(),

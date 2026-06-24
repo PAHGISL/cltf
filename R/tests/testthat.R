@@ -1,15 +1,15 @@
 #!/usr/bin/env Rscript
 # Script: testthat.R
-# Objective: Run the rclt package testthat suite.
+# Objective: Run the cltf package testthat suite.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
-# Inputs: Tests and package source under rclt.
+# Last updated: 2026-06-24
+# Inputs: Tests and package source under R.
 # Outputs: Testthat results.
-# Usage: Rscript -e 'testthat::test_local("rclt")'
-# Dependencies: testthat, rclt
+# Usage: Rscript -e 'testthat::test_local("R")'
+# Dependencies: testthat, cltf
 
 library(testthat)
-library(rclt)
+library(cltf)
 
-test_check("rclt")
+test_check("cltf")

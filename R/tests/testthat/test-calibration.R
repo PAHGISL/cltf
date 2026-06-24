@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 # Script: test-calibration.R
-# Objective: Verify replicate-level log-space RCLT calibration and profiles.
+# Objective: Verify replicate-level log-space CLTF calibration and profiles.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Deterministic synthetic forcing and concentration observations.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "calibration").
-# Dependencies: testthat, rclt
+# Usage: Loaded by testthat::test_local("R", filter = "calibration").
+# Dependencies: testthat, cltf
 
 synthetic_calibration_case <- function() {
   truth <- c(
@@ -21,7 +21,7 @@ synthetic_calibration_case <- function() {
     time_days                  = seq(5, 120, length.out = 12),
     cumulative_infiltration_mm = seq(80, 1400, length.out = 12)
   )
-  simulation <- simulate_rclt(
+  simulation <- simulate_cltf(
     time_days                   = forcing$time_days,
     cumulative_infiltration_mm = forcing$cumulative_infiltration_mm,
     top_layer                  = cltf_layer(
@@ -76,7 +76,7 @@ test_that("multistart calibration improves a finite replicate-level objective", 
   )
   lower <- c(mu = 0.2, sigma = 0.15, R_top = 0.5, R_bottom = 0.5, k = 0)
   upper <- c(mu = 3, sigma = 1.5, R_top = 8, R_bottom = 8, k = 0.05)
-  initial_objective <- rclt_objective(
+  initial_objective <- cltf_objective(
     initial,
     case$observations,
     case$forcing,
@@ -86,7 +86,7 @@ test_that("multistart calibration improves a finite replicate-level objective", 
     method                     = "trapezoid",
     n_steps                    = 501
   )
-  fit <- fit_rclt(
+  fit <- fit_cltf(
     observations               = case$observations,
     forcing                    = case$forcing,
     application_rate_g_ha      = 30,
@@ -134,8 +134,8 @@ test_that("calibration is deterministic for a fixed seed", {
     control                    = list(maxit = 20)
   )
 
-  first <- do.call(fit_rclt, arguments)
-  second <- do.call(fit_rclt, arguments)
+  first <- do.call(fit_cltf, arguments)
+  second <- do.call(fit_cltf, arguments)
 
   expect_equal(second$parameters, first$parameters)
   expect_equal(second$objective, first$objective)
@@ -144,7 +144,7 @@ test_that("calibration is deterministic for a fixed seed", {
 
 test_that("objective profiles fix the selected parameter", {
   case <- synthetic_calibration_case()
-  fit <- fit_rclt(
+  fit <- fit_cltf(
     observations               = case$observations,
     forcing                    = case$forcing,
     application_rate_g_ha      = 30,
@@ -157,7 +157,7 @@ test_that("objective profiles fix the selected parameter", {
     control                    = list(maxit = 20)
   )
   grid <- fit$parameters["k"] * c(0.8, 1.2)
-  profile <- profile_rclt_parameter(
+  profile <- profile_cltf_parameter(
     fit,
     parameter = "k",
     grid      = grid,
@@ -166,4 +166,22 @@ test_that("objective profiles fix the selected parameter", {
 
   expect_equal(profile$parameter_value, as.numeric(grid))
   expect_true(all(is.finite(profile$objective)))
+})
+
+test_that("CLTF layers and fits use CLTF classes", {
+  expect_s3_class(top_layer_fixture(), "cltf_layer")
+
+  case <- synthetic_calibration_case()
+  fit <- fit_cltf(
+    observations               = case$observations,
+    forcing                    = case$forcing,
+    application_rate_g_ha      = 30,
+    top_bulk_density_g_cm3     = 1.35,
+    bottom_bulk_density_g_cm3  = 1.42,
+    n_starts                   = 1,
+    method                     = "trapezoid",
+    n_steps                    = 301,
+    control                    = list(maxit = 10)
+  )
+  expect_s3_class(fit, "cltf_fit")
 })

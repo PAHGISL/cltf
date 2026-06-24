@@ -3,17 +3,17 @@
 # Objective: Verify SLGA bulk-density parsing, depth weighting, and manual overrides.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Cached SLGA JSON fixtures and bulk-density overrides.
 # Outputs: Testthat assertions.
-# Usage: Loaded by testthat::test_local("rclt", filter = "slga").
-# Dependencies: testthat, rclt, withr
+# Usage: Loaded by testthat::test_local("R", filter = "slga").
+# Dependencies: testthat, cltf, withr
 
 test_that("SLGA bulk-density fixture parses to standard depth bands", {
   path <- system.file(
     "extdata",
     "slga_bulk_density_response.json",
-    package = "rclt"
+    package = "cltf"
   )
   bands <- parse_slga_bulk_density(path)
 
@@ -26,7 +26,7 @@ test_that("bulk density is weighted by depth overlap", {
   path <- system.file(
     "extdata",
     "slga_bulk_density_response.json",
-    package = "rclt"
+    package = "cltf"
   )
   bands <- parse_slga_bulk_density(path)
   top <- weight_bulk_density(bands, 0, 100)

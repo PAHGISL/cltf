@@ -1,11 +1,11 @@
 # Script: observations.R
-# Objective: Prepare replicate-level herbicide observations for RCLT analysis.
+# Objective: Prepare replicate-level herbicide observations for CLTF analysis.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Herbicide workbooks or tidy concentration vectors.
 # Outputs: Explicit depth intervals, non-detect fields, summaries, and inferred application rates.
-# Usage: Use exported functions after library(rclt).
+# Usage: Use exported functions after library(cltf).
 # Dependencies: readxl
 
 #' Map workbook depth labels to sampling intervals

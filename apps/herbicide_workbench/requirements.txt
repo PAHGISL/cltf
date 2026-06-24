@@ -3,4 +3,5 @@ numpy
 pandas
 scipy
 matplotlib
+pydeck>=0.9
 pytest

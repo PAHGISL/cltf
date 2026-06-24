@@ -18,7 +18,7 @@ streamlit run apps/herbicide_workbench/app.py
 On Gadi, from the current checkout:
 
 ```bash
-cd /g/data/ym05/github/yuyi13/PyCLT
+cd /g/data/ym05/github/yuyi13/cltf
 streamlit run apps/herbicide_workbench/app.py --server.address 0.0.0.0 --server.port 8501
 ```
 

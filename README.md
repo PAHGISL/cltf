@@ -1,87 +1,60 @@
-<img src="PyCLT_logo.png" alt="PyCLT logo" align="right" width="180" />
+<img src="cltf_logo.png" alt="CLTF logo" align="right" width="180" />
 
-# PyCLT
+# Herbicide Dynamics Simulated by the Convective Lognormal Transfer Function (CLTF) in Python and R
 
-Python translation of the Convective Log-normal Transfer (CLT) model used to simulate solute movement through soil layers. The original R code combined a simple water-balance with a two-layer residence-time model; this repo keeps the physics but improves structure and readability.
+This repository contains paired Python and R implementations of the Convective
+Lognormal Transfer Function (CLTF) model for herbicide dynamics in two soil
+layers. The current workflow uses the R implementation as an independently
+verified reference and maintains a Python implementation plus Streamlit
+workbench with shared data, tests, and examples.
 
-The actively refined scientific reference is now the `rclt/` R package. Its
-layer-average resident-concentration formulation, conservative two-layer CLTF
-convolution, elapsed-time degradation, data preparation, and calibration must
-be verified before equivalent changes are made to the Python package and web
-demo.
+The primary target quantity is layer-average resident concentration in
+`µg/kg dry soil`, following the sampled-data structure. The webapp and examples
+currently support historical analysis over observed SILO climate periods.
 
-## Repo layout
-```
-PyCLT/
-├── pyclt/                     # Core library
-│   ├── __init__.py            # Public exports
-│   ├── climate.py             # Radiation + Priestley–Taylor PET utilities
-│   ├── infiltration.py        # Cumulative infiltration (rain − ET thresholding)
-│   └── model.py               # Two-layer CLT model, parameters, run helper
-│
-├── rclt/                      # Reference R package for verified CLTF development
-│
-├── examples/                  # Runnable examples/demos
-│   ├── synthetic_demo.py      # Toy climate → ET → infiltration → CLT outputs (self-contained)
-│   ├── bcg01_demo.py          # Demo using BoM-derived climate (needs generated CSV)
-│   └── generate_bcg01_climate.py  # Build example/data/bcg01_2019_climate.csv from CLT_model/BoM/BCG01
-│
-├── apps/
-│   └── herbicide_workbench/   # Streamlit research app for upload/tune/fit workflows
-│
-├── examples/data/             # Example datasets
-│   └── bcg01_2019_climate.csv # Daily Tmax/Tmin/rain for BCG01 (built from BoM files)
-│
-├── requirements.txt           # Python dependencies (pip)
-├── requirements-workbench.txt # Extra dependencies for the Streamlit workbench and tests
-├── README.md                  # Project overview & instructions
-└── PyCLT_logo.png             # Logo
+## Repository layout
+
+```text
+cltf/
+├── R/                         # R package: cltf
+├── python/                    # Python package: cltf
+│   ├── src/cltf/              # Python implementation
+│   └── tests/                 # Python and cross-language tests
+├── examples/
+│   ├── R/                     # R reference-case runner
+│   ├── python/                # Python reference-case runner
+│   └── data/                  # Shared NSW and SA inputs
+├── apps/herbicide_workbench/  # Streamlit CLTF workbench
+├── reference/                 # Committed reference outputs and tolerances
+├── requirements.txt           # Python runtime dependencies
+└── requirements-workbench.txt # App/test dependencies
 ```
 
-## What the model does
-- Computes daily potential evapotranspiration (PET) from Tmax/Tmin using Priestley–Taylor radiation balance (no humidity required).
-- Converts rainfall and ET to cumulative net infiltration (rain minus ET\*factor, thresholded at zero).
-- Propagates a relative concentration signal through a two-layer soil profile (0–10 cm and 10–30 cm by default) using lognormal travel-time distributions with layer-specific retardation and decay.
-- Produces relative concentrations (C/C0) over time for the surface and subsoil layers.
+## Install and test
 
-The current Python implementation still reflects the earlier relative-
-concentration model. The R reference additionally predicts resident
-concentration in provisionally µg/kg dry soil and should not yet be assumed
-numerically equivalent to Python.
+Python:
 
-## Layout
-- `rclt/` — reference R package for the verified two-layer CLTF model. The R implementation is developed and validated before equivalent Python updates.
-- `examples/R/run_reference_case.R` — reproducible shared NSW Griffith and
-  SA Minnipa Heavy/Imazapic calibration and plotting workflow.
-- `reference/` — committed R reference outputs
-  for future Python-equivalence tests.
-- `PyCLT/climate.py` — radiation and PET helpers (`pet_from_temp`, `calc_et`, `transmissivity`, etc.).
-- `PyCLT/infiltration.py` — simple cumulative infiltration calculation.
-- `PyCLT/model.py` — `CLTParameters`, `TwoLayerCLT`, and `run_series` for forward simulations.
-- `examples/synthetic_demo.py` — self-contained demo that stitches climate → ET → infiltration → CLT outputs.
-- `requirements.txt` — minimal dependencies (numpy, pandas; matplotlib optional for plotting).
+```bash
+pip install -r requirements.txt
+PYTHONPATH=python/src python -m pytest python/tests -q
+```
 
-## Herbicide research workbench
-The repository includes a Streamlit workbench for collaborators to upload climate and observation CSVs, adjust model parameters, run a selected case, fit parameters, and download outputs.
+R:
 
-Run locally from the repository root:
+```bash
+Rscript -e 'testthat::test_local("R")'
+```
+
+Workbench:
+
 ```bash
 pip install -r requirements-workbench.txt
 streamlit run apps/herbicide_workbench/app.py
 ```
 
-For Streamlit Community Cloud, deploy this repository from GitHub and set the entrypoint to:
-```text
-apps/herbicide_workbench/app.py
-```
+## Shared examples
 
-Sample CSVs are available under `apps/herbicide_workbench/sample_data/`. See `apps/herbicide_workbench/README.md` for input column details and collaborator-review notes.
-
-## Shared CLTF reference cases
-
-The current R and Python CLTF implementations share normalized NSW Griffith
-and SA Minnipa Heavy/Imazapic inputs under `examples/data/`. Run the paired
-reference workflows from the repository root:
+NSW Griffith Heavy/Imazapic is the primary showcase case:
 
 ```bash
 Rscript examples/R/run_reference_case.R \
@@ -95,68 +68,63 @@ python examples/python/run_reference_case.py \
   --output-dir /tmp/nsw-python
 ```
 
-The runners use committed SILO and SLGA inputs and do not require network
-credentials for these shared examples.
+SA Minnipa Heavy/Imazapic is retained as a secondary regression case:
 
-## Quickstart (synthetic data)
 ```bash
-cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/PyCLT
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python examples/synthetic_demo.py
-```
-The demo prints a head/tail of simulated concentrations and, if `matplotlib` is installed, pops up a plot of top vs. subsoil relative concentrations.
+Rscript examples/R/run_reference_case.R \
+  --case sa_minnipa_heavy_imazapic \
+  --input-dir examples/data/sa_minnipa_heavy_imazapic \
+  --output-dir /tmp/sa-r
 
-## Example with BoM data (BCG01)
-We can derive a ready-to-use climate CSV from the raw BoM files already present in `CLT_model/BoM/BCG01`.
-```bash
-cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/PyCLT
-python examples/generate_bcg01_climate.py        # writes examples/data/bcg01_2019_climate.csv
-python examples/bcg01_demo.py                    # runs CLT on that dataset
-```
-Expected outputs from `bcg01_demo.py`:
-- `examples/data/bcg01_results.csv`: tabular time series with rain, ET0, cumulative infiltration, and relative concentrations (top/subsoil).
-- `examples/data/bcg01_results.png`: time series plot of relative concentration in top (0–10 cm) and subsoil (10–30 cm).
-
-<p>
-<img src="examples/data/bcg01_results.png">
-
-<em>Demo results using BCG01 data.</em>
-<p>
-
-## Using your own data
-1) Prepare a dataframe (or CSV) with at least:
-   - `jdays`: day-of-year integer (1–366)
-   - `Tmax`, `Tmin`: daily max/min air temperature in °C
-   - `rain_mm`: daily rainfall in mm  
-2) Compute ET0 and cumulative infiltration:
-```python
-import pandas as pd
-from pyclt.climate import calc_et
-from pyclt.infiltration import cumulative_infiltration
-
-df = pd.read_csv("my_climate.csv")
-df["et0_mm"] = calc_et(latitude_deg=-35.9, data=df)
-df["cumulative_infiltration_mm"] = cumulative_infiltration(df["rain_mm"], df["et0_mm"], et_factor=1.0)
-```
-3) Run CLT forward:
-```python
-import numpy as np
-from pyclt.model import CLTParameters, run_series
-
-params = CLTParameters(mu=3.0, sigma=1.0, retardation_top=6, decay_top=0.0015,
-                       retardation_bottom=8, decay_bottom=0.02, min_value=0.0001)
-times = np.arange(len(df), dtype=float)  # days since application
-top, bottom = run_series(times, df["cumulative_infiltration_mm"], params)
-df["top_rel_conc"] = top
-df["subsoil_rel_conc"] = bottom
+python examples/python/run_reference_case.py \
+  --case sa_minnipa_heavy_imazapic \
+  --input-dir examples/data/sa_minnipa_heavy_imazapic \
+  --output-dir /tmp/sa-python
 ```
 
-## Notes and differences from the R script
-- File paths are no longer hard-coded; you supply your own CSV/Excel sources.
-- The model keeps the two-layer integration, linear depth-varying retardation in the lower layer, and simple exponential decay for each layer.
-- Missing temperature handling and site-by-site calibration loops from the R script are not reproduced here; add them as needed around the provided functions.
-- All computations are vectorised with numpy; defaults mirror the original R constants.
+The shared examples run offline from committed SILO climate and SLGA-shaped
+bulk-density inputs.
+
+## Workbench
+
+The Streamlit workbench uses the Python `cltf` package directly. Users select a
+demo site, soil group, and herbicide, then either use the bundled example
+observations or upload one observation CSV. Climate and soil inputs are prepared
+automatically from committed caches, with optional SILO and SLGA refresh when
+credentials are available.
+
+Key app features:
+
+- NSW Griffith and SA Minnipa site selectors;
+- satellite map with attributed fallback basemap;
+- one observation CSV upload;
+- cached/API climate and bulk-density provenance;
+- application-rate inference from positive top-layer T0 observations;
+- adjustable residue assessment date, defaulting to 90 days beyond application;
+- CLTF fit diagnostics, mass-balance diagnostics, and download artifacts.
+
+Assessment dates are restricted to the observed climate period. Forecasting from
+historical climatology is a planned future extension.
+
+## Model assumptions and units
+
+- The transport model is a two-layer CLTF with lognormal transfer functions.
+- Retardation enters through the corrected `y / R` structure.
+- Degradation is first-order over total elapsed time.
+- Effective porosity is used as a concentration scaling factor.
+- Water balance uses daily thresholded net infiltration:
+  `max(rain + irrigation - PET * et_factor, 0)`.
+- Resident concentrations are reported as `µg/kg dry soil`.
+
+## Calibration note
+
+The current CLTF equations identify the products `mu * R_top` and
+`mu * R_bottom`, not `mu` and both retardation factors separately. Comparisons
+between R and Python should therefore focus on forward predictions, objective
+values, mass balance, and fitted transport scales unless additional constraints
+resolve that scaling ridge.
 
 ## References
-- Jury, W. A., & Roth, K. (1990). *Transfer Functions and Solute Movement Through Soil*. Birkhäuser, Boston.
+
+Jury, W. A., & Roth, K. (1990). *Transfer Functions and Solute Movement
+Through Soil*. Birkhäuser, Boston.

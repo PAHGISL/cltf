@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -28,10 +29,15 @@ ASSESSMENT_LABEL = "Residue assessment"
 ASSESSMENT_COLOR = "#7A0177"
 
 
+def _preferred_font_family() -> str:
+    available = {font.name for font in font_manager.fontManager.ttflist}
+    return "Arial" if "Arial" in available else "DejaVu Sans"
+
+
 def configure_matplotlib() -> None:
     """Apply app-level matplotlib defaults."""
 
-    plt.rcParams["font.family"] = "Arial"
+    plt.rcParams["font.family"] = _preferred_font_family()
     plt.rcParams["figure.dpi"] = 130
     plt.rcParams["axes.spines.top"] = False
     plt.rcParams["axes.spines.right"] = False

@@ -1,0 +1,6 @@
+{
+  "absolute": 1e-8,
+  "relative": 1e-8,
+  "trapezoid_absolute": 0.0002,
+  "calibration_objective_absolute": 0.00001
+}

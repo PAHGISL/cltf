@@ -78,7 +78,7 @@ def apply_elapsed_degradation(
 def resident_concentration_ug_kg(
     application_rate_g_ha: float,
     remaining_fraction: ArrayLike,
-    soil_mass_kg_ha_value: float,
+    soil_mass_kg_ha: float,
     effective_porosity: float = 0.2,
 ) -> float | np.ndarray:
     """Convert applied mass and a remaining fraction to resident concentration."""
@@ -91,8 +91,8 @@ def resident_concentration_ug_kg(
         or not np.all(np.isfinite(fractions))
         or np.any(fractions < 0)
         or np.any(fractions > 1)
-        or not math.isfinite(soil_mass_kg_ha_value)
-        or soil_mass_kg_ha_value <= 0
+        or not math.isfinite(soil_mass_kg_ha)
+        or soil_mass_kg_ha <= 0
         or not math.isfinite(effective_porosity)
         or effective_porosity <= 0
     ):
@@ -101,7 +101,7 @@ def resident_concentration_ug_kg(
     result = (
         application_rate_g_ha
         * 1e6
-        / soil_mass_kg_ha_value
+        / soil_mass_kg_ha
         * fractions
         * (0.2 / effective_porosity)
     )

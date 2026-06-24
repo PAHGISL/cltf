@@ -37,3 +37,20 @@ test_that("case configurations define approved showcase periods", {
   expect_equal(sa$application_date, "2024-06-12")
   expect_equal(sa$final_date, "2024-10-28")
 })
+
+test_that("shared showcase observations preserve replicate rows", {
+  nsw <- utils::read.csv(shared_case_path(
+    "nsw_griffith_heavy_imazapic",
+    "observations.csv"
+  ))
+  sa <- utils::read.csv(shared_case_path(
+    "sa_minnipa_heavy_imazapic",
+    "observations.csv"
+  ))
+
+  expect_equal(nrow(nsw), 30)
+  expect_equal(sum(nsw$used_for_calibration), 24)
+  expect_equal(sort(unique(nsw$depth_bottom_mm)), c(150, 300))
+  expect_equal(nrow(sa), 31)
+  expect_equal(sum(sa$used_for_calibration), 25)
+})

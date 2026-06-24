@@ -14,6 +14,8 @@ Dependencies: json, pathlib, pandas, cltf
 import json
 from pathlib import Path
 
+import pandas as pd
+
 
 ROOT = Path(__file__).parents[2]
 DATA = ROOT / "examples" / "data"
@@ -41,3 +43,17 @@ def test_case_configuration_matches_site_registry() -> None:
         assert case["herbicide"] == "Imazapic"
         assert case["application_date"] == application_date
         assert case["final_date"] == final_date
+
+
+def test_shared_observations_preserve_replicates() -> None:
+    nsw = pd.read_csv(
+        DATA / "nsw_griffith_heavy_imazapic" / "observations.csv"
+    )
+    sa = pd.read_csv(
+        DATA / "sa_minnipa_heavy_imazapic" / "observations.csv"
+    )
+    assert len(nsw) == 30
+    assert int(nsw["used_for_calibration"].sum()) == 24
+    assert sorted(nsw["depth_bottom_mm"].unique()) == [150.0, 300.0]
+    assert len(sa) == 31
+    assert int(sa["used_for_calibration"].sum()) == 25

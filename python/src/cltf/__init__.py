@@ -8,9 +8,93 @@ Last updated: 2026-06-24
 Inputs: Python CLTF package modules.
 Outputs: Public package metadata and exports.
 Usage: import cltf
-Dependencies: Python standard library
+Dependencies: cltf package modules
 """
 
-"""Public interface for the Python CLTF implementation."""
+from .calibration import (
+    CLTFFit,
+    cltf_objective,
+    fit_cltf,
+    profile_cltf_parameter,
+)
+from .climate import pet_from_temperature
+from .concentration import (
+    apply_elapsed_degradation,
+    resident_concentration_ug_kg,
+    soil_mass_kg_ha,
+)
+from .observations import (
+    depth_interval_mm,
+    geometric_concentration,
+    infer_application_rate_g_ha,
+    prepare_non_detects,
+    read_herbicide_workbook,
+)
+from .plotting import (
+    plot_bulk_density,
+    plot_climate_forcing,
+    plot_mass_balance,
+    plot_mass_fractions,
+    plot_objective_profile,
+    plot_observed_fitted,
+    plot_residuals,
+)
+from .silo import fetch_silo_point, parse_silo_csv, round_silo_coordinate
+from .simulation import simulate_cltf
+from .slga import (
+    fetch_slga_bulk_density,
+    parse_slga_bulk_density,
+    weight_bulk_density,
+)
+from .transport import (
+    CLTFLayer,
+    cltf_cdf,
+    cltf_layer_probabilities,
+    cltf_pdf,
+    cltf_two_layer_cdf,
+)
+from .water_balance import (
+    cumulative_infiltration,
+    daily_infiltration,
+    first_passage_time,
+)
 
 __version__ = "0.1.0"
+
+__all__ = [
+    "CLTFFit",
+    "CLTFLayer",
+    "apply_elapsed_degradation",
+    "cltf_cdf",
+    "cltf_layer_probabilities",
+    "cltf_objective",
+    "cltf_pdf",
+    "cltf_two_layer_cdf",
+    "cumulative_infiltration",
+    "daily_infiltration",
+    "depth_interval_mm",
+    "fetch_silo_point",
+    "fetch_slga_bulk_density",
+    "first_passage_time",
+    "fit_cltf",
+    "geometric_concentration",
+    "infer_application_rate_g_ha",
+    "parse_silo_csv",
+    "parse_slga_bulk_density",
+    "pet_from_temperature",
+    "plot_bulk_density",
+    "plot_climate_forcing",
+    "plot_mass_balance",
+    "plot_mass_fractions",
+    "plot_objective_profile",
+    "plot_observed_fitted",
+    "plot_residuals",
+    "prepare_non_detects",
+    "profile_cltf_parameter",
+    "read_herbicide_workbook",
+    "resident_concentration_ug_kg",
+    "round_silo_coordinate",
+    "simulate_cltf",
+    "soil_mass_kg_ha",
+    "weight_bulk_density",
+]

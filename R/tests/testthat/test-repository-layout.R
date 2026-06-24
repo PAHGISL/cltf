@@ -14,6 +14,9 @@ test_that("R package and shared references use approved paths", {
     testthat::test_path("..", "..", ".."),
     mustWork = TRUE
   )
+  if (!file.exists(file.path(repository_root, ".git"))) {
+    skip("Repository-layout assertions run only from a source checkout.")
+  }
 
   expect_true(file.exists(file.path(repository_root, "R", "DESCRIPTION")))
   expect_true(file.exists(file.path(repository_root, "reference")))

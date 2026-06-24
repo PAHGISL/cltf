@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 # Script: run_sa_reference.R
-# Objective: Build the reproducible SA Minnipa Heavy/Imazapic RCLT reference case.
+# Objective: Build the reproducible SA Minnipa Heavy/Imazapic CLTF reference case.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-23
+# Last updated: 2026-06-24
 # Inputs: Herbicide workbook, cached or credentialed SILO/SLGA data, and CLI paths.
 # Outputs: Prepared CSV/JSON artifacts and seven diagnostic PNG plots.
-# Usage: Rscript rclt/examples/run_sa_reference.R --workbook <xlsx> --cache-dir <dir> --output-dir <dir>
-# Dependencies: R >= 4.2, readxl, jsonlite, and the source files under rclt/R.
+# Usage: Rscript examples/R/run_sa_reference.R --workbook <xlsx> --cache-dir <dir> --output-dir <dir>
+# Dependencies: R >= 4.2, readxl, jsonlite, and the source files under R/R.
 
 script_path <- function() {
   argument <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
@@ -18,10 +18,10 @@ script_path <- function() {
 }
 
 package_dir <- normalizePath(
-  file.path(dirname(script_path()), ".."),
+  file.path(dirname(script_path()), "..", "..", "R"),
   mustWork = TRUE
 )
-repo_dir <- normalizePath(file.path(package_dir, ".."), mustWork = TRUE)
+repository_dir <- normalizePath(file.path(package_dir, ".."), mustWork = TRUE)
 r_sources <- sort(list.files(
   file.path(package_dir, "R"),
   pattern   = "\\.R$",
@@ -32,14 +32,14 @@ invisible(lapply(r_sources, source, local = .GlobalEnv))
 parse_arguments <- function(arguments) {
   defaults <- list(
     workbook = "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx",
-    cache_dir = file.path(package_dir, "reference", "cache"),
+    cache_dir = file.path(repository_dir, "reference", "cache"),
     output_dir = file.path(
-      package_dir,
+      repository_dir,
       "reference",
       "sa_minnipa_heavy_imazapic"
     ),
     climate_source = file.path(
-      repo_dir,
+      repository_dir,
       "apps",
       "herbicide_workbench",
       "sample_data",
@@ -60,7 +60,7 @@ parse_arguments <- function(arguments) {
     if (option == "--help") {
       cat(
         paste(
-          "Usage: Rscript rclt/examples/run_sa_reference.R",
+          "Usage: Rscript examples/R/run_sa_reference.R",
           "[--workbook FILE] [--cache-dir DIR] [--output-dir DIR]",
           "[--climate-source CSV]",
           "[--bulk-density-override VALUE[,VALUE,VALUE]]\n"
@@ -151,7 +151,7 @@ materialize_climate_cache <- function(
       )
       write_csv(raw, paths$csv)
       normalized_source <- normalizePath(climate_source, mustWork = TRUE)
-      repo_prefix <- paste0(repo_dir, .Platform$file.sep)
+      repo_prefix <- paste0(repository_dir, .Platform$file.sep)
       source_label <- if (startsWith(normalized_source, repo_prefix)) {
         substring(normalized_source, nchar(repo_prefix) + 1L)
       } else {

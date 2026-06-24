@@ -1,0 +1,28 @@
+[
+  {
+    "site_id": "NSW_Griffith",
+    "display_name": "NSW Griffith",
+    "latitude": -34.194974,
+    "longitude": 146.08877,
+    "silo_latitude": -34.2,
+    "silo_longitude": 146.1,
+    "top_depth_mm": 150,
+    "bottom_depth_mm": 300,
+    "soil_groups": ["Heavy", "Light"],
+    "default_soil_group": "Heavy",
+    "default_herbicide": "Imazapic"
+  },
+  {
+    "site_id": "SA_Minnipa",
+    "display_name": "SA Minnipa",
+    "latitude": -32.831016,
+    "longitude": 135.14494,
+    "silo_latitude": -32.85,
+    "silo_longitude": 135.15,
+    "top_depth_mm": 100,
+    "bottom_depth_mm": 300,
+    "soil_groups": ["Heavy", "Light"],
+    "default_soil_group": "Heavy",
+    "default_herbicide": "Imazapic"
+  }
+]

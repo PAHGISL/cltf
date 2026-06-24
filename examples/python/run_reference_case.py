@@ -89,6 +89,14 @@ def require_file(path: Path) -> Path:
     return path
 
 
+def repository_label(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(REPOSITORY_DIR))
+    except ValueError:
+        return str(resolved)
+
+
 def read_site(case: dict[str, Any]) -> pd.Series:
     sites = pd.read_json(REPOSITORY_DIR / "examples" / "data" / "sites.json")
     selected = sites.loc[sites["site_id"].eq(case["site_id"])]
@@ -480,7 +488,7 @@ def run_case(arguments: argparse.Namespace) -> None:
             "package_version": CLTF_VERSION,
             "python_version": sys.version,
         },
-        "source_input_dir": str(input_dir),
+        "source_input_dir": repository_label(input_dir),
         "concentration": {
             "unit": case["concentration_unit"],
             "unit_status": case["unit_status"],

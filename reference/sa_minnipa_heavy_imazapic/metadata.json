@@ -1,11 +1,11 @@
 {
   "reference_case": "SA_Minnipa / Heavy / Imazapic",
-  "generated_at_utc": "2026-06-24 08:47:42 UTC",
+  "generated_at_utc": "2026-06-24 09:05:25 UTC",
   "software": {
     "package_version": "0.1.0",
     "r_version": "R version 4.5.0 (2025-04-11)"
   },
-  "source_input_dir": "/home/603/yy4778/.config/superpowers/worktrees/PyCLT/cltf-monorepo/examples/data/sa_minnipa_heavy_imazapic",
+  "source_input_dir": "examples/data/sa_minnipa_heavy_imazapic",
   "concentration": {
     "unit": "ug/kg dry soil",
     "unit_status": "provisional; inferred from the sampled-data structure"

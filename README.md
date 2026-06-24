@@ -77,6 +77,27 @@ apps/herbicide_workbench/app.py
 
 Sample CSVs are available under `apps/herbicide_workbench/sample_data/`. See `apps/herbicide_workbench/README.md` for input column details and collaborator-review notes.
 
+## Shared CLTF reference cases
+
+The current R and Python CLTF implementations share normalized NSW Griffith
+and SA Minnipa Heavy/Imazapic inputs under `examples/data/`. Run the paired
+reference workflows from the repository root:
+
+```bash
+Rscript examples/R/run_reference_case.R \
+  --case nsw_griffith_heavy_imazapic \
+  --input-dir examples/data/nsw_griffith_heavy_imazapic \
+  --output-dir /tmp/nsw-r
+
+python examples/python/run_reference_case.py \
+  --case nsw_griffith_heavy_imazapic \
+  --input-dir examples/data/nsw_griffith_heavy_imazapic \
+  --output-dir /tmp/nsw-python
+```
+
+The runners use committed SILO and SLGA inputs and do not require network
+credentials for these shared examples.
+
 ## Quickstart (synthetic data)
 ```bash
 cd /Users/yiyu/Library/CloudStorage/OneDrive-TheUniversityofSydney(Staff)/Work/Workspace/GitHub/PyCLT

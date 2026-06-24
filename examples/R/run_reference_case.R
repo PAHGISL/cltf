@@ -120,6 +120,16 @@ require_file <- function(path) {
   path
 }
 
+repository_label <- function(path) {
+  normalized <- normalizePath(path, mustWork = TRUE)
+  prefix <- paste0(repository_dir, .Platform$file.sep)
+  if (startsWith(normalized, prefix)) {
+    substring(normalized, nchar(prefix) + 1L)
+  } else {
+    normalized
+  }
+}
+
 read_site_registry <- function(site_id) {
   sites <- jsonlite::fromJSON(file.path(
     repository_dir,
@@ -476,7 +486,7 @@ run_case <- function(arguments) {
       package_version = unname(description[1, "Version"]),
       r_version       = R.version.string
     ),
-    source_input_dir = input_dir,
+    source_input_dir = repository_label(input_dir),
     concentration = list(
       unit        = case$concentration_unit,
       unit_status = case$unit_status

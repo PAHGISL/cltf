@@ -90,19 +90,23 @@ Therefore these two products are identifiable, but `mu` and both retardation
 factors are not separately identifiable without an external constraint. The fit
 object exposes the two transport scales and an explicit identifiability note.
 
-## SA reference workflow
+## Shared reference workflow
 
 Run from the repository root:
 
 ```bash
-Rscript examples/R/run_sa_reference.R \
-  --workbook "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx" \
-  --cache-dir "reference/cache" \
+Rscript examples/R/run_reference_case.R \
+  --case "nsw_griffith_heavy_imazapic" \
+  --input-dir "examples/data/nsw_griffith_heavy_imazapic" \
+  --output-dir "reference/nsw_griffith_heavy_imazapic"
+
+Rscript examples/R/run_reference_case.R \
+  --case "sa_minnipa_heavy_imazapic" \
+  --input-dir "examples/data/sa_minnipa_heavy_imazapic" \
   --output-dir "reference/sa_minnipa_heavy_imazapic"
 ```
 
 The workflow writes prepared observations, climate forcing, bulk density,
 daily predictions, fit tables, metadata, objective profiles, and seven base-R
-diagnostic plots. See
-`reference/sa_minnipa_heavy_imazapic/README.md` for the current assumptions and
-known limitations.
+diagnostic plots from normalized shared inputs. See `reference/` for the
+current assumptions and known limitations.

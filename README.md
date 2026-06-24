@@ -51,9 +51,9 @@ numerically equivalent to Python.
 
 ## Layout
 - `rclt/` — reference R package for the verified two-layer CLTF model. The R implementation is developed and validated before equivalent Python updates.
-- `rclt/examples/run_sa_reference.R` — reproducible SA Minnipa
-  Heavy/Imazapic calibration and plotting workflow.
-- `rclt/reference/` — cached external inputs and committed R reference outputs
+- `examples/R/run_reference_case.R` — reproducible shared NSW Griffith and
+  SA Minnipa Heavy/Imazapic calibration and plotting workflow.
+- `reference/` — committed R reference outputs
   for future Python-equivalence tests.
 - `PyCLT/climate.py` — radiation and PET helpers (`pet_from_temp`, `calc_et`, `transmissivity`, etc.).
 - `PyCLT/infiltration.py` — simple cumulative infiltration calculation.

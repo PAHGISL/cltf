@@ -24,7 +24,7 @@ test_that("R package and shared references use approved paths", {
     repository_root,
     "examples",
     "R",
-    "run_sa_reference.R"
+    "run_reference_case.R"
   )))
   expect_false(file.exists(file.path(repository_root, "cltf")))
 })

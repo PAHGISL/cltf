@@ -62,10 +62,11 @@ The next scientific decision should be either:
 From the repository root:
 
 ```bash
-Rscript examples/R/run_sa_reference.R \
-  --workbook "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx" \
-  --cache-dir "reference/cache" \
+Rscript examples/R/run_reference_case.R \
+  --case "sa_minnipa_heavy_imazapic" \
+  --input-dir "examples/data/sa_minnipa_heavy_imazapic" \
   --output-dir "reference/sa_minnipa_heavy_imazapic"
 ```
 
-With the committed caches present, no SILO or TERN credentials are required.
+With the committed shared inputs present, no SILO or TERN credentials are
+required for rebuilding this reference output.

@@ -41,12 +41,10 @@ from workbench.model_service import (
 )
 from workbench.plots import (
     plot_bulk_density,
-    plot_climate_forcing,
-    plot_mass_balance,
-    plot_mass_fractions,
-    plot_objective_profiles,
-    plot_observed_fitted,
-    plot_residuals,
+    plot_cumulative_infiltration_histogram,
+    plot_observation_violin,
+    plot_simulation_heatmap,
+    plot_water_forcing,
 )
 from workbench.site_registry import (
     available_herbicides,
@@ -150,6 +148,7 @@ def main() -> None:
         "Historical CLTF analysis for layer-average resident herbicide "
         "concentration. Forecasting from climatology is a future extension."
     )
+    st.markdown("[Open deployed app](https://herbicide-cltf.streamlit.app/)")
 
     registry = load_site_registry()
     default = default_case(registry)
@@ -315,15 +314,19 @@ def main() -> None:
         st.dataframe(external_inputs.bulk_density, width="stretch")
 
     st.subheader("Cached forcing and soil diagnostics")
-    left, right = st.columns(2)
-    left.pyplot(
-        plot_climate_forcing(
+    st.pyplot(
+        plot_water_forcing(
             external_inputs.forcing,
+            assessment_day=assessment_day,
             assessment_date=assessment_date,
         ),
         clear_figure=True,
     )
-    right.pyplot(plot_bulk_density(external_inputs.bulk_density), clear_figure=True)
+    st.pyplot(
+        plot_cumulative_infiltration_histogram(external_inputs.forcing),
+        clear_figure=True,
+    )
+    st.pyplot(plot_bulk_density(external_inputs.bulk_density), clear_figure=True)
 
     run_clicked = st.button("Run CLTF fit and assessment", type="primary")
     if not run_clicked:
@@ -393,23 +396,18 @@ def main() -> None:
 
     st.subheader("CLTF diagnostic plots")
     st.pyplot(
-        plot_observed_fitted(result.fit.predictions, assessment_day=assessment_day),
+        plot_observation_violin(result.fit.predictions, assessment_day=assessment_day),
         clear_figure=True,
     )
-    left, right = st.columns(2)
-    left.pyplot(
-        plot_mass_fractions(result.predictions, assessment_day=assessment_day),
+    st.pyplot(
+        plot_simulation_heatmap(
+            result.predictions,
+            top_depth_mm=float(site["top_depth_mm"]),
+            bottom_depth_mm=float(site["bottom_depth_mm"]),
+            assessment_day=assessment_day,
+        ),
         clear_figure=True,
     )
-    right.pyplot(
-        plot_mass_balance(result.predictions, assessment_day=assessment_day),
-        clear_figure=True,
-    )
-    left, right = st.columns(2)
-    left.pyplot(plot_residuals(result.fit.predictions), clear_figure=True)
-    profiles = result.metadata.get("objective_profiles")
-    if isinstance(profiles, pd.DataFrame) and not profiles.empty:
-        right.pyplot(plot_objective_profiles(profiles), clear_figure=True)
 
     st.subheader("Predictions")
     st.dataframe(result.predictions, width="stretch")

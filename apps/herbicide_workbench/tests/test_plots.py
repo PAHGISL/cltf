@@ -15,15 +15,16 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.collections import PolyCollection, QuadMesh
 
 from workbench.plots import (
+    configure_matplotlib,
     plot_bulk_density,
-    plot_climate_forcing,
-    plot_mass_balance,
-    plot_mass_fractions,
-    plot_objective_profiles,
-    plot_observed_fitted,
-    plot_residuals,
+    plot_cumulative_infiltration_histogram,
+    plot_observation_violin,
+    plot_simulation_heatmap,
+    plot_water_forcing,
 )
 
 
@@ -72,20 +73,12 @@ def _simulation() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "time_days": [0, 30, 60, 90, 120],
+            "concentration_top_ug_kg": [10.0, 6.0, 3.0, 1.5, 0.8],
+            "concentration_bottom_ug_kg": [0.0, 0.4, 0.9, 1.0, 0.7],
             "mass_top": np.linspace(1.0, 0.2, 5),
             "mass_bottom": np.linspace(0.0, 0.3, 5),
             "mass_below": np.linspace(0.0, 0.2, 5),
             "mass_degraded": np.linspace(0.0, 0.3, 5),
-        }
-    )
-
-
-def _profile() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "parameter": ["mu_top", "mu_top", "mu_top"],
-            "parameter_value": [20.0, 30.0, 40.0],
-            "objective": [2.0, 1.0, 1.5],
         }
     )
 
@@ -102,35 +95,56 @@ def _bulk_density() -> pd.DataFrame:
     )
 
 
-def test_climate_forcing_marks_assessment_day() -> None:
-    figure = plot_climate_forcing(_forcing(), assessment_day=90)
+def test_configure_matplotlib_sets_arial() -> None:
+    configure_matplotlib()
+
+    assert plt.rcParams["font.family"] == ["Arial"]
+
+
+def test_water_forcing_marks_assessment_day() -> None:
+    figure = plot_water_forcing(_forcing(), assessment_day=90)
 
     _assert_assessment_line_at_day(figure)
 
 
-def test_observed_fitted_marks_assessment_day() -> None:
-    figure = plot_observed_fitted(_predictions(), assessment_day=90)
+def test_cumulative_infiltration_histogram_uses_bars() -> None:
+    figure = plot_cumulative_infiltration_histogram(_forcing())
 
+    assert figure.axes[0].patches
+
+
+def test_observation_violin_has_jitter_and_dashed_fits() -> None:
+    figure = plot_observation_violin(_predictions(), assessment_day=90)
     _assert_assessment_line_at_day(figure)
 
+    axis = figure.axes[0]
+    assert any(
+        isinstance(collection, PolyCollection)
+        for collection in axis.collections
+    )
+    assert any(
+        line.get_linestyle() == "--"
+        for line in axis.lines
+        if line.get_label() != "Residue assessment"
+    )
 
-def test_mass_fractions_marks_assessment_day() -> None:
-    figure = plot_mass_fractions(_simulation(), assessment_day=90)
 
+def test_simulation_heatmap_uses_pcolormesh() -> None:
+    figure = plot_simulation_heatmap(
+        _simulation(),
+        top_depth_mm=150,
+        bottom_depth_mm=300,
+        assessment_day=90,
+    )
     _assert_assessment_line_at_day(figure)
 
-
-def test_mass_balance_marks_assessment_day() -> None:
-    figure = plot_mass_balance(_simulation(), assessment_day=90)
-
-    _assert_assessment_line_at_day(figure)
+    assert any(
+        isinstance(collection, QuadMesh)
+        for collection in figure.axes[0].collections
+    )
 
 
 def test_non_temporal_diagnostics_render_without_assessment_lines() -> None:
-    residuals = plot_residuals(_predictions())
-    objective = plot_objective_profiles(_profile())
     density = plot_bulk_density(_bulk_density())
 
-    assert not _assessment_lines(residuals)
-    assert not _assessment_lines(objective)
     assert not _assessment_lines(density)

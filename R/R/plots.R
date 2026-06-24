@@ -9,8 +9,7 @@
 # Dependencies: grDevices, graphics
 
 cltf_plot_family <- function() {
-  fonts <- names(grDevices::pdfFonts())
-  if ("Arial" %in% fonts) "Arial" else "sans"
+  "Arial"
 }
 
 with_cltf_par <- function(code) {

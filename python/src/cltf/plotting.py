@@ -27,13 +27,23 @@ import pandas as pd
 
 
 def _preferred_font_family() -> str:
-    available = {
+    return "Arial"
+
+
+def _register_arial_font() -> None:
+    installed = {
         font.name
         for font in font_manager.fontManager.ttflist
     }
-    return "Arial" if "Arial" in available else "DejaVu Sans"
+    if "Arial" in installed:
+        return
+    for font_path in font_manager.findSystemFonts(fontext="ttf"):
+        if font_path.lower().endswith("arial.ttf"):
+            font_manager.fontManager.addfont(font_path)
+            return
 
 
+_register_arial_font()
 matplotlib.rcParams["font.family"] = [_preferred_font_family()]
 
 _COLORS = ("#0072B2", "#D55E00", "#009E73", "#CC79A7")

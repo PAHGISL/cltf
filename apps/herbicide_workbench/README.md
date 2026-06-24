@@ -24,6 +24,8 @@ streamlit run apps/herbicide_workbench/app.py --server.address 0.0.0.0 --server.
 
 The app imports the in-repository Python source from `python/src/cltf`.
 
+Deployed demo: <https://herbicide-cltf.streamlit.app/>
+
 ## Demo sites
 
 The app currently exposes two shared demo cases:
@@ -84,8 +86,8 @@ MAPBOX_API_KEY
 CLTF_WORKBENCH_CACHE_DIR
 ```
 
-`MAPBOX_API_KEY` enables a satellite-streets map. Without it, the app uses an
-attributed Carto fallback basemap.
+`MAPBOX_API_KEY` enables a satellite-streets map. Without it, the app overlays
+an attributed Esri World Imagery tile layer for site landscape context.
 
 ## Residue assessment date
 
@@ -103,6 +105,6 @@ After a run, the app provides:
 
 - fitted parameters and diagnostics;
 - assessment concentration summary;
-- observed/fitted, mass-fraction, mass-balance, residual, objective-profile,
-  climate, and bulk-density plots;
+- observation violin, simulation heatmap, forcing, infiltration, and
+  bulk-density plots;
 - downloadable CSV/JSON artifacts with provenance metadata.

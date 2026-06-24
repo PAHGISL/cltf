@@ -1,4 +1,4 @@
-<img src="cltf_logo.png" alt="CLTF logo" align="right" width="180" />
+<img src="PyCLT_logo.png" alt="CLTF logo" align="right" width="180" />
 
 # Herbicide Dynamics Simulated by the Convective Lognormal Transfer Function (CLTF) in Python and R
 
@@ -52,6 +52,8 @@ pip install -r requirements-workbench.txt
 streamlit run apps/herbicide_workbench/app.py
 ```
 
+Deployed demo: <https://herbicide-cltf.streamlit.app/>
+
 ## Shared examples
 
 NSW Griffith Heavy/Imazapic is the primary showcase case:
@@ -96,12 +98,12 @@ credentials are available.
 Key app features:
 
 - NSW Griffith and SA Minnipa site selectors;
-- satellite map with attributed fallback basemap;
+- satellite/landscape site map with Esri imagery fallback when no Mapbox token is configured;
 - one observation CSV upload;
 - cached/API climate and bulk-density provenance;
 - application-rate inference from positive top-layer T0 observations;
 - adjustable residue assessment date, defaulting to 90 days beyond application;
-- CLTF fit diagnostics, mass-balance diagnostics, and download artifacts.
+- CLTF fit diagnostics, observation/simulation plots, and download artifacts.
 
 Assessment dates are restricted to the observed climate period. Forecasting from
 historical climatology is a planned future extension.

@@ -19,6 +19,10 @@ import pydeck as pdk
 
 SATELLITE_STYLE = "mapbox://styles/mapbox/satellite-streets-v12"
 CARTO_POSITRON_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+ESRI_WORLD_IMAGERY_TILES = (
+    "https://services.arcgisonline.com/ArcGIS/rest/services/"
+    "World_Imagery/MapServer/tile/{z}/{y}/{x}"
+)
 
 
 def _site_points(site: dict[str, object]) -> pd.DataFrame:
@@ -74,7 +78,20 @@ def build_site_map(
 
     token = (mapbox_token or "").strip()
     points = _site_points(site)
+    imagery_layers = []
+    if not token:
+        imagery_layers.append(
+            pdk.Layer(
+                "TileLayer",
+                data=ESRI_WORLD_IMAGERY_TILES,
+                id="esri-world-imagery",
+                min_zoom=0,
+                max_zoom=19,
+                tile_size=256,
+            )
+        )
     layers = [
+        *imagery_layers,
         pdk.Layer(
             "ScatterplotLayer",
             data=points,

@@ -13,6 +13,8 @@ Dependencies: pydeck, workbench
 
 from __future__ import annotations
 
+import json
+
 from workbench.maps import build_site_map
 from workbench.site_registry import get_site
 
@@ -25,6 +27,13 @@ def test_map_uses_satellite_style_when_token_exists() -> None:
 
 def test_map_uses_attributed_fallback_without_token() -> None:
     deck = build_site_map(get_site("SA_Minnipa"), mapbox_token="")
+    payload = json.loads(deck.to_json())
+    layers = payload["layers"]
 
     assert deck.map_style != "mapbox://styles/mapbox/satellite-streets-v12"
     assert len(deck.layers) >= 2
+    assert any(layer["@@type"] == "TileLayer" for layer in layers)
+    assert any(
+        "World_Imagery" in str(layer.get("data", ""))
+        for layer in layers
+    )

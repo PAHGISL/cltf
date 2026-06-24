@@ -1,4 +1,8 @@
-# RCLT Model Design
+# CLTF Model Design
+
+> Naming note: paths and APIs were updated on 2026-06-24 to the approved
+> language-neutral CLTF monorepo convention. Git history preserves the original
+> implementation terminology.
 
 Date: 2026-06-23
 Status: Approved design, pending written-spec review
@@ -13,7 +17,7 @@ The primary prediction target is layer-average total resident herbicide concentr
 
 This phase includes:
 
-- a standalone R package under `rclt/`;
+- a standalone R package under `R/`;
 - two-layer CLTF transport driven by cumulative infiltration;
 - a single herbicide-specific first-order degradation rate;
 - layer-average concentration predictions;
@@ -38,9 +42,9 @@ Those extensions should only be considered after the R reference cases are verif
 ## Repository Structure
 
 ```text
-PyCLT/
-├── pyclt/
-├── rclt/
+Python CLTF/
+├── cltf/
+├── R/
 │   ├── DESCRIPTION
 │   ├── NAMESPACE
 │   ├── R/
@@ -61,7 +65,7 @@ PyCLT/
 └── docs/
 ```
 
-`rclt/` is a separate R package. A top-level `R/` directory is not used because it would conventionally imply that the entire repository is one R package.
+`R/` is a separate R package. A top-level `R/` directory is not used because it would conventionally imply that the entire repository is one R package.
 
 ## Scientific Definitions
 

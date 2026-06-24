@@ -1,8 +1,12 @@
-# RCLT Data, Calibration, and Reference Workflow Implementation Plan
+# CLTF Data, Calibration, and Reference Workflow Implementation Plan
+
+> Naming note: paths and APIs were updated on 2026-06-24 to the approved
+> language-neutral CLTF monorepo convention. Git history preserves the original
+> implementation terminology.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend the verified RCLT numerical package with observation preparation, SILO and SLGA cached access, calibration, base-R diagnostics, and a reproducible SA Minnipa Imazapic reference case.
+**Goal:** Extend the verified CLTF numerical package with observation preparation, SILO and SLGA cached access, calibration, base-R diagnostics, and a reproducible SA Minnipa Imazapic reference case.
 
 **Architecture:** External data retrieval is isolated behind cache-first functions so model tests and reference runs require no network access. Observation preparation preserves replicates and explicit depth intervals, while calibration consumes only tidy tables and the numerical simulator. The SA workflow writes versioned forcing, soil, observation, prediction, parameter, metadata, and plot artifacts that later become Python-equivalence fixtures.
 
@@ -14,33 +18,33 @@
 
 ## File Map
 
-- Modify `rclt/DESCRIPTION`: add optional data/geospatial dependencies.
-- Create `rclt/R/observations.R`: workbook import, depth mapping, non-detect handling, geometric summaries, application-rate inference.
-- Create `rclt/R/climate.R`: Priestley–Taylor temperature PET.
-- Create `rclt/R/silo.R`: cache-first SILO request and parser.
-- Create `rclt/R/slga.R`: cache-first SLGA metadata, point extraction and depth weighting.
-- Create `rclt/R/calibration.R`: replicate-level log objective, multistart fitting, bound and profile diagnostics.
-- Create `rclt/R/plots.R`: required base-R plots with Arial.
-- Create `rclt/inst/extdata/`: small review-safe fixtures and data-service responses.
-- Create `rclt/examples/run_sa_reference.R`: end-to-end reference workflow.
-- Create `rclt/tests/testthat/test-observations.R`.
-- Create `rclt/tests/testthat/test-climate.R`.
-- Create `rclt/tests/testthat/test-silo.R`.
-- Create `rclt/tests/testthat/test-slga.R`.
-- Create `rclt/tests/testthat/test-calibration.R`.
-- Create `rclt/tests/testthat/test-plots.R`.
-- Create `rclt/tests/testthat/test-sa-regression.R`.
-- Create `rclt/reference/sa_minnipa_heavy_imazapic/`: versioned reference outputs.
+- Modify `R/DESCRIPTION`: add optional data/geospatial dependencies.
+- Create `R/R/observations.R`: workbook import, depth mapping, non-detect handling, geometric summaries, application-rate inference.
+- Create `R/R/climate.R`: Priestley–Taylor temperature PET.
+- Create `R/R/silo.R`: cache-first SILO request and parser.
+- Create `R/R/slga.R`: cache-first SLGA metadata, point extraction and depth weighting.
+- Create `R/R/calibration.R`: replicate-level log objective, multistart fitting, bound and profile diagnostics.
+- Create `R/R/plots.R`: required base-R plots with Arial.
+- Create `R/inst/extdata/`: small review-safe fixtures and data-service responses.
+- Create `R/examples/run_sa_reference.R`: end-to-end reference workflow.
+- Create `R/tests/testthat/test-observations.R`.
+- Create `R/tests/testthat/test-climate.R`.
+- Create `R/tests/testthat/test-silo.R`.
+- Create `R/tests/testthat/test-slga.R`.
+- Create `R/tests/testthat/test-calibration.R`.
+- Create `R/tests/testthat/test-plots.R`.
+- Create `R/tests/testthat/test-sa-regression.R`.
+- Create `R/reference/sa_minnipa_heavy_imazapic/`: versioned reference outputs.
 
 All new or revised R files must comply with the workspace script-header standard.
 
 ### Task 1: Add data dependencies and review-safe fixtures
 
 **Files:**
-- Modify: `rclt/DESCRIPTION`
-- Create: `rclt/inst/extdata/sa_observations.csv`
-- Create: `rclt/inst/extdata/sa_silo.csv`
-- Create: `rclt/inst/extdata/slga_bulk_density_response.json`
+- Modify: `R/DESCRIPTION`
+- Create: `R/inst/extdata/sa_observations.csv`
+- Create: `R/inst/extdata/sa_silo.csv`
+- Create: `R/inst/extdata/slga_bulk_density_response.json`
 
 - [ ] **Step 1: Install the one currently missing workbook dependency**
 
@@ -54,7 +58,7 @@ Expected: `readxl` installs successfully.
 
 - [ ] **Step 2: Extend package dependencies**
 
-Update `rclt/DESCRIPTION`:
+Update `R/DESCRIPTION`:
 
 ```text
 Imports:
@@ -70,7 +74,7 @@ Suggests:
 
 - [ ] **Step 3: Create a minimal observation fixture**
 
-Create `rclt/inst/extdata/sa_observations.csv`:
+Create `R/inst/extdata/sa_observations.csv`:
 
 ```csv
 site_id,soil_group,herbicide,application_date,sample_date,days_since_application,depth_top_mm,depth_bottom_mm,replicate_id,concentration_ug_kg,is_non_detect,detection_limit_ug_kg,is_t0
@@ -81,7 +85,7 @@ SA_Minnipa,Heavy,Imazapic,2024-06-12,2024-07-10,28,100,300,1,4.2,FALSE,,FALSE
 
 - [ ] **Step 4: Create deterministic SILO and SLGA parser fixtures**
 
-Create `rclt/inst/extdata/sa_silo.csv`:
+Create `R/inst/extdata/sa_silo.csv`:
 
 ```csv
 Date,T.Max,T.Min,Rain
@@ -89,7 +93,7 @@ Date,T.Max,T.Min,Rain
 20240613,19.2,6.8,3.4
 ```
 
-Create `rclt/inst/extdata/slga_bulk_density_response.json`:
+Create `R/inst/extdata/slga_bulk_density_response.json`:
 
 ```json
 {
@@ -108,7 +112,7 @@ Create `rclt/inst/extdata/slga_bulk_density_response.json`:
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R")'
 ```
 
 Expected: package loads without an error.
@@ -116,19 +120,19 @@ Expected: package loads without an error.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add rclt/DESCRIPTION rclt/inst/extdata
-git commit -m "build: add RCLT data integration dependencies"
+git add R/DESCRIPTION R/inst/extdata
+git commit -m "build: add CLTF data integration dependencies"
 ```
 
 ### Task 2: Implement observation preparation
 
 **Files:**
-- Create: `rclt/R/observations.R`
-- Create: `rclt/tests/testthat/test-observations.R`
+- Create: `R/R/observations.R`
+- Create: `R/tests/testthat/test-observations.R`
 
 - [ ] **Step 1: Write failing depth and non-detect tests**
 
-Create `rclt/tests/testthat/test-observations.R` with tests that assert:
+Create `R/tests/testthat/test-observations.R` with tests that assert:
 
 ```r
 expect_equal(depth_interval_mm("SA", "10cm"), c(0, 100))
@@ -159,14 +163,14 @@ expect_equal(summary$geometric_mean_ug_kg, 2)
 Run:
 
 ```bash
-Rscript -e 'testthat::test_local("rclt", filter = "observations")'
+Rscript -e 'testthat::test_local("R", filter = "observations")'
 ```
 
 Expected: FAIL because observation functions do not exist.
 
 - [ ] **Step 3: Implement explicit interval mapping**
 
-In `rclt/R/observations.R`, implement:
+In `R/R/observations.R`, implement:
 
 ```r
 depth_interval_mm <- function(sheet, depth_label) {
@@ -265,7 +269,7 @@ infer_application_rate_g_ha <- function(
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt", filter = "observations")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R", filter = "observations")'
 ```
 
 Expected: all observation tests PASS.
@@ -273,15 +277,15 @@ Expected: all observation tests PASS.
 Commit:
 
 ```bash
-git add rclt/R/observations.R rclt/tests/testthat/test-observations.R rclt/NAMESPACE rclt/man
+git add R/R/observations.R R/tests/testthat/test-observations.R R/NAMESPACE R/man
 git commit -m "feat: prepare herbicide observations and non-detects"
 ```
 
 ### Task 3: Implement temperature-based PET
 
 **Files:**
-- Create: `rclt/R/climate.R`
-- Create: `rclt/tests/testthat/test-climate.R`
+- Create: `R/R/climate.R`
+- Create: `R/tests/testthat/test-climate.R`
 
 - [ ] **Step 1: Write R/Python reference-value tests**
 
@@ -292,7 +296,7 @@ python - <<'PY'
 import sys
 import pandas as pd
 sys.path.insert(0, ".")
-from pyclt.climate import calc_et
+from cltf.climate import calc_et
 data = pd.DataFrame({
     "jdays": [164, 165, 166, 167, 168],
     "Tmax": [18.4, 19.2, 20.1, 17.8, 16.5],
@@ -309,18 +313,18 @@ Record the printed values in `test-climate.R` and assert `expect_equal(..., tole
 Run:
 
 ```bash
-Rscript -e 'testthat::test_local("rclt", filter = "climate")'
+Rscript -e 'testthat::test_local("R", filter = "climate")'
 ```
 
 Expected: FAIL because `pet_from_temperature()` is undefined.
 
 - [ ] **Step 3: Port the current climate formulas**
 
-Implement `pet_from_temperature(jday, tmax_c, tmin_c, latitude_deg, albedo = 0.18, surface_emissivity = 0.97, pt_constant = 1.26)` in `rclt/R/climate.R`.
+Implement `pet_from_temperature(jday, tmax_c, tmin_c, latitude_deg, albedo = 0.18, surface_emissivity = 0.97, pt_constant = 1.26)` in `R/R/climate.R`.
 
 The formulas and rounding must match:
 
-- `pyclt/climate.py::declination`;
+- `cltf/climate.py::declination`;
 - `potential_solar`;
 - `transmissivity`;
 - `atmospheric_emissivity`;
@@ -336,7 +340,7 @@ Return millimetres per day and reject `Tmax < Tmin`.
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt", filter = "climate")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R", filter = "climate")'
 ```
 
 Expected: all tests PASS against the recorded Python values.
@@ -344,15 +348,15 @@ Expected: all tests PASS against the recorded Python values.
 Commit:
 
 ```bash
-git add rclt/R/climate.R rclt/tests/testthat/test-climate.R rclt/NAMESPACE rclt/man
+git add R/R/climate.R R/tests/testthat/test-climate.R R/NAMESPACE R/man
 git commit -m "feat: add temperature-based PET forcing"
 ```
 
 ### Task 4: Implement cache-first SILO access
 
 **Files:**
-- Create: `rclt/R/silo.R`
-- Create: `rclt/tests/testthat/test-silo.R`
+- Create: `R/R/silo.R`
+- Create: `R/tests/testthat/test-silo.R`
 
 - [ ] **Step 1: Write parser and request-construction tests**
 
@@ -368,7 +372,7 @@ Test that `round_silo_coordinate(-32.831016)` returns `-32.85`, and that a cache
 
 - [ ] **Step 2: Implement request and parser functions**
 
-Implement in `rclt/R/silo.R`:
+Implement in `R/R/silo.R`:
 
 ```r
 round_silo_coordinate <- function(value) round(value / 0.05) * 0.05
@@ -406,7 +410,7 @@ Implement `fetch_silo_point()` with:
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt", filter = "silo")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R", filter = "silo")'
 ```
 
 Expected: all tests PASS without network access.
@@ -416,7 +420,7 @@ Expected: all tests PASS without network access.
 Run only when credentials are present:
 
 ```bash
-Rscript -e 'if (nzchar(Sys.getenv("SILO_USERNAME")) && nzchar(Sys.getenv("SILO_PASSWORD"))) rclt::fetch_silo_point(-32.831016, 135.14494, as.Date("2024-06-12"), as.Date("2024-06-13"), tempfile())'
+Rscript -e 'if (nzchar(Sys.getenv("SILO_USERNAME")) && nzchar(Sys.getenv("SILO_PASSWORD"))) cltf::fetch_silo_point(-32.831016, 135.14494, as.Date("2024-06-12"), as.Date("2024-06-13"), tempfile())'
 ```
 
 Expected: two daily rows and a cache metadata file.
@@ -424,15 +428,15 @@ Expected: two daily rows and a cache metadata file.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add rclt/R/silo.R rclt/tests/testthat/test-silo.R rclt/NAMESPACE rclt/man
+git add R/R/silo.R R/tests/testthat/test-silo.R R/NAMESPACE R/man
 git commit -m "feat: add cached SILO point retrieval"
 ```
 
 ### Task 5: Implement SLGA bulk-density access and depth weighting
 
 **Files:**
-- Create: `rclt/R/slga.R`
-- Create: `rclt/tests/testthat/test-slga.R`
+- Create: `R/R/slga.R`
+- Create: `R/tests/testthat/test-slga.R`
 
 - [ ] **Step 1: Write fixture parsing and weighting tests**
 
@@ -497,7 +501,7 @@ Implement `fetch_slga_bulk_density()` to:
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt", filter = "slga")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R", filter = "slga")'
 ```
 
 Expected: all fixture and manual-override tests PASS.
@@ -505,15 +509,15 @@ Expected: all fixture and manual-override tests PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add rclt/R/slga.R rclt/tests/testthat/test-slga.R rclt/NAMESPACE rclt/man
+git add R/R/slga.R R/tests/testthat/test-slga.R R/NAMESPACE R/man
 git commit -m "feat: add cached SLGA bulk-density retrieval"
 ```
 
 ### Task 6: Implement replicate-level calibration
 
 **Files:**
-- Create: `rclt/R/calibration.R`
-- Create: `rclt/tests/testthat/test-calibration.R`
+- Create: `R/R/calibration.R`
+- Create: `R/tests/testthat/test-calibration.R`
 
 - [ ] **Step 1: Write synthetic recovery tests**
 
@@ -533,10 +537,10 @@ Use at least 12 times spanning both layer breakthrough phases and add determinis
 
 - [ ] **Step 2: Implement parameter unpacking and objective**
 
-Implement `rclt_objective()` to:
+Implement `cltf_objective()` to:
 
 - construct shared `mu` and `sigma` layers;
-- run `simulate_rclt()`;
+- run `simulate_cltf()`;
 - join predictions by `days_since_application` and depth interval;
 - use `analysis_concentration_ug_kg`;
 - return `sqrt(mean((log(observed) - log(predicted))^2))`;
@@ -544,7 +548,7 @@ Implement `rclt_objective()` to:
 
 - [ ] **Step 3: Implement deterministic multistart fitting**
 
-Implement `fit_rclt()` using `stats::optim(method = "L-BFGS-B")`, explicit lower/upper vectors, and a matrix of starts. Return:
+Implement `fit_cltf()` using `stats::optim(method = "L-BFGS-B")`, explicit lower/upper vectors, and a matrix of starts. Return:
 
 - fitted parameters;
 - objective;
@@ -556,14 +560,14 @@ Implement `fit_rclt()` using `stats::optim(method = "L-BFGS-B")`, explicit lower
 
 - [ ] **Step 4: Implement one-dimensional objective profiles**
 
-Implement `profile_rclt_parameter(fit, parameter, grid, ...)` by fixing one parameter over `grid` and optimizing the remaining four parameters at each point.
+Implement `profile_cltf_parameter(fit, parameter, grid, ...)` by fixing one parameter over `grid` and optimizing the remaining four parameters at each point.
 
 - [ ] **Step 5: Run tests and commit**
 
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt", filter = "calibration")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R", filter = "calibration")'
 ```
 
 Expected: all calibration tests PASS.
@@ -571,15 +575,15 @@ Expected: all calibration tests PASS.
 Commit:
 
 ```bash
-git add rclt/R/calibration.R rclt/tests/testthat/test-calibration.R rclt/NAMESPACE rclt/man
-git commit -m "feat: add multistart RCLT calibration"
+git add R/R/calibration.R R/tests/testthat/test-calibration.R R/NAMESPACE R/man
+git commit -m "feat: add multistart CLTF calibration"
 ```
 
 ### Task 7: Implement base-R diagnostic plots
 
 **Files:**
-- Create: `rclt/R/plots.R`
-- Create: `rclt/tests/testthat/test-plots.R`
+- Create: `R/R/plots.R`
+- Create: `R/tests/testthat/test-plots.R`
 
 - [ ] **Step 1: Write plot smoke tests**
 
@@ -600,14 +604,14 @@ Required functions:
 Implement:
 
 ```r
-rclt_plot_family <- function() {
+cltf_plot_family <- function() {
   fonts <- names(grDevices::pdfFonts())
   if ("Arial" %in% fonts) "Arial" else "sans"
 }
 
-with_rclt_par <- function(code) {
+with_cltf_par <- function(code) {
   old <- graphics::par(
-    family = rclt_plot_family(),
+    family = cltf_plot_family(),
     mar    = c(4.2, 4.5, 1.2, 1.0),
     las    = 1
   )
@@ -623,7 +627,7 @@ Implement all seven plots with base graphics. Observed/fitted and residual plots
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt"); testthat::test_local("rclt", filter = "plots")'
+Rscript -e 'roxygen2::roxygenise("cltf"); testthat::test_local("R", filter = "plots")'
 ```
 
 Expected: all plot files are generated successfully.
@@ -631,16 +635,16 @@ Expected: all plot files are generated successfully.
 Commit:
 
 ```bash
-git add rclt/R/plots.R rclt/tests/testthat/test-plots.R rclt/NAMESPACE rclt/man
-git commit -m "feat: add RCLT diagnostic plots"
+git add R/R/plots.R R/tests/testthat/test-plots.R R/NAMESPACE R/man
+git commit -m "feat: add CLTF diagnostic plots"
 ```
 
 ### Task 8: Build the SA Minnipa reference workflow
 
 **Files:**
-- Create: `rclt/examples/run_sa_reference.R`
-- Create: `rclt/tests/testthat/test-sa-regression.R`
-- Create: `rclt/reference/sa_minnipa_heavy_imazapic/README.md`
+- Create: `R/examples/run_sa_reference.R`
+- Create: `R/tests/testthat/test-sa-regression.R`
+- Create: `R/reference/sa_minnipa_heavy_imazapic/README.md`
 - Create: generated CSV, JSON and PNG files under the reference directory.
 
 - [ ] **Step 1: Create the executable reference script with a compliant header**
@@ -674,10 +678,10 @@ The metadata JSON must include:
 Run:
 
 ```bash
-Rscript rclt/examples/run_sa_reference.R \
+Rscript R/examples/run_sa_reference.R \
   --workbook "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx" \
-  --cache-dir "rclt/reference/cache" \
-  --output-dir "rclt/reference/sa_minnipa_heavy_imazapic"
+  --cache-dir "R/reference/cache" \
+  --output-dir "R/reference/sa_minnipa_heavy_imazapic"
 ```
 
 Expected: the reference directory contains:
@@ -724,14 +728,14 @@ In the reference README state:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add rclt/examples rclt/reference rclt/tests/testthat/test-sa-regression.R
-git commit -m "feat: add SA Minnipa RCLT reference workflow"
+git add R/examples R/reference R/tests/testthat/test-sa-regression.R
+git commit -m "feat: add SA Minnipa CLTF reference workflow"
 ```
 
 ### Task 9: Final documentation and verification
 
 **Files:**
-- Modify: `rclt/README.md`
+- Modify: `R/README.md`
 - Modify: `README.md`
 
 - [ ] **Step 1: Document credentials and offline operation**
@@ -755,7 +759,7 @@ Document observation intervals, concentration units, forcing fields, SLGA metada
 Run:
 
 ```bash
-Rscript -e 'roxygen2::roxygenise("rclt")'
+Rscript -e 'roxygen2::roxygenise("cltf")'
 ```
 
 - [ ] **Step 4: Run the complete R suite**
@@ -763,9 +767,9 @@ Rscript -e 'roxygen2::roxygenise("rclt")'
 Run:
 
 ```bash
-Rscript -e 'testthat::test_local("rclt")'
-R CMD build rclt
-R CMD check rclt_0.1.0.tar.gz --no-manual
+Rscript -e 'testthat::test_local("R")'
+R CMD build cltf
+R CMD check cltf_0.1.0.tar.gz --no-manual
 ```
 
 Expected: all tests PASS and `R CMD check` reports OK.
@@ -776,10 +780,10 @@ Run with credentials unset:
 
 ```bash
 env -u SILO_USERNAME -u SILO_PASSWORD -u TERN_API_KEY \
-  Rscript rclt/examples/run_sa_reference.R \
+  Rscript R/examples/run_sa_reference.R \
   --workbook "/g/data/ym05/herbicide/context/Herbicide Dissipation 2024.xlsx" \
-  --cache-dir "rclt/reference/cache" \
-  --output-dir "/tmp/rclt-sa-verification"
+  --cache-dir "R/reference/cache" \
+  --output-dir "/tmp/cltf-sa-verification"
 ```
 
 Expected: successful completion using only cached external data.
@@ -808,8 +812,8 @@ Expected: no whitespace errors and only intended documentation/source changes.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add rclt README.md
-git commit -m "docs: complete RCLT reference workflow documentation"
+git add cltf README.md
+git commit -m "docs: complete CLTF reference workflow documentation"
 ```
 
 ## Completion Gate

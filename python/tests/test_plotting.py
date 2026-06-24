@@ -13,6 +13,8 @@ Dependencies: matplotlib, numpy, pandas, pytest, cltf
 
 from pathlib import Path
 
+import matplotlib
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -27,6 +29,11 @@ from cltf.plotting import (
     plot_observed_fitted,
     plot_residuals,
 )
+
+
+def test_plotting_primary_font_is_available() -> None:
+    installed = {font.name for font in font_manager.fontManager.ttflist}
+    assert matplotlib.rcParams["font.family"][0] in installed
 
 
 @pytest.fixture

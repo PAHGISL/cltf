@@ -17,6 +17,7 @@ import math
 from typing import Sequence
 
 import matplotlib
+from matplotlib import font_manager
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, Rectangle
@@ -25,7 +26,15 @@ import numpy as np
 import pandas as pd
 
 
-matplotlib.rcParams["font.family"] = ["Arial", "DejaVu Sans"]
+def _preferred_font_family() -> str:
+    available = {
+        font.name
+        for font in font_manager.fontManager.ttflist
+    }
+    return "Arial" if "Arial" in available else "DejaVu Sans"
+
+
+matplotlib.rcParams["font.family"] = [_preferred_font_family()]
 
 _COLORS = ("#0072B2", "#D55E00", "#009E73", "#CC79A7")
 _MASS_COLORS = ("#0072B2", "#D55E00", "#009E73", "#777777")

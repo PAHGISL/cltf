@@ -1,21 +1,31 @@
-"""Configuration helpers for the herbicide workbench."""
+#!/usr/bin/env python3
+"""
+Script: config.py
+Objective: Configure repository paths for the CLTF Streamlit workbench.
+Author: Yi Yu
+Created: 2026-06-24
+Last updated: 2026-06-24
+Inputs: Repository-relative app and Python package paths.
+Outputs: Import-path helper for the Python cltf package.
+Usage: Call ensure_cltf_path() before importing cltf from app entry points.
+Dependencies: pathlib, sys
+"""
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_PYCLT_ROOT = Path(os.environ.get("PYCLT_ROOT", REPO_ROOT))
+CLTF_SRC = REPO_ROOT / "python" / "src"
+EXAMPLES_DATA = REPO_ROOT / "examples" / "data"
 
 
-def ensure_pyclt_path(pyclt_root: Path = DEFAULT_PYCLT_ROOT) -> None:
-    """Make the active PyCLT source tree importable."""
-    if not pyclt_root.exists():
-        raise FileNotFoundError(f"PyCLT source tree was not found at {pyclt_root}")
-    if not (pyclt_root / "pyclt").exists():
-        raise FileNotFoundError(f"PyCLT package directory was not found under {pyclt_root}")
-    root_text = str(pyclt_root)
-    if root_text not in sys.path:
-        sys.path.insert(0, root_text)
+def ensure_cltf_path() -> None:
+    """Make the active Python CLTF source tree importable."""
+
+    if not (CLTF_SRC / "cltf" / "__init__.py").exists():
+        raise FileNotFoundError(f"Python CLTF source was not found at {CLTF_SRC}")
+    src_text = str(CLTF_SRC)
+    if src_text not in sys.path:
+        sys.path.insert(0, src_text)

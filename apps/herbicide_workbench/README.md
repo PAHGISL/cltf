@@ -1,77 +1,108 @@
-# Herbicide Research Workbench
+# CLTF Herbicide Workbench
 
-Streamlit app for research collaborators to upload herbicide persistence CSVs, adjust PyCLT parameters, run simulations, fit one selected case, visualise observed-versus-model curves, and download reproducible outputs.
+Streamlit app for running the Python `cltf` implementation against shared
+resident-concentration herbicide examples or a single uploaded observation CSV.
+The app selects a site/soil/herbicide case, prepares cached or API-refreshed
+SILO climate and SLGA bulk density inputs, fits CLTF, and reports residue
+concentrations at an assessment date.
 
-## Run Locally
+## Run locally
 
 From the repository root:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
 pip install -r requirements-workbench.txt
 streamlit run apps/herbicide_workbench/app.py
 ```
 
-If you are on Gadi using the shared `geo_env`, install the requirements there or use the already configured environment:
+On Gadi, from the current checkout:
 
 ```bash
-cd /g/data/ym05/github/yuyi13/PyCLT
+cd /g/data/ym05/github/yuyi13/cltf
 streamlit run apps/herbicide_workbench/app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
-## Streamlit Community Cloud
+The app imports the in-repository Python source from `python/src/cltf`.
 
-Deploy this repository from GitHub and set the app entrypoint to:
+## Demo sites
 
-```text
-apps/herbicide_workbench/app.py
-```
+The app currently exposes two shared demo cases:
 
-The root `requirements.txt` includes the runtime packages needed by the app.
+- NSW Griffith / Heavy / Imazapic
+- SA Minnipa / Heavy / Imazapic
 
-## Sample Data
+The default showcase is NSW Griffith. Shared inputs live under
+`examples/data/`, so the app no longer carries a separate legacy sample-data
+directory.
 
-Use the CSVs in `apps/herbicide_workbench/sample_data/` for a quick review run:
+## Observation input
 
-- Climate CSV: `daily_climate.csv`
-- Observations CSV: `observed_rel.csv`
-- Site config CSV: `site_config.csv`
-
-After uploading them, select:
+The only uploaded file is an observation CSV. Required columns are:
 
 ```text
-SA_Minnipa / Heavy / Imazapic
+sample_date
+depth_top_mm
+depth_bottom_mm
+concentration_ug_kg
 ```
 
-## Expected Input Columns
-
-Climate CSV requires:
+The file must also provide either `application_date` or enough T0 information
+through `is_t0` or `timepoint`. Optional columns include:
 
 ```text
-date,rain_mm,Tmax,Tmin
+replicate_id
+is_non_detect
+detection_limit_ug_kg
+site_id
+soil_group
+herbicide
 ```
 
-Recommended climate columns:
+Concentration units follow the shared sampled-data structure:
+`µg/kg dry soil`. Non-detects are handled through half-detection-limit
+substitution when a positive `detection_limit_ug_kg` is supplied.
+
+## Climate and soil inputs
+
+Climate and bulk density are not uploaded by the user.
+
+- SILO climate is read from the committed shared cache by default.
+- SLGA whole-earth bulk density is read from the committed shared cache by
+  default.
+- If refresh is enabled and credentials are available, the app attempts live API
+  retrieval and records the source in the run metadata.
+- If live retrieval fails or credentials are absent, the app falls back to the
+  committed cache and displays a warning.
+
+Environment variables:
 
 ```text
-site_id,date,jdays,days_since_application,rain_mm,Tmax,Tmin,et0_mm,cumulative_infiltration_mm
+SILO_USERNAME
+SILO_PASSWORD
+TERN_API_KEY
+MAPBOX_API_KEY
+CLTF_WORKBENCH_CACHE_DIR
 ```
 
-Observation CSV requires:
+`MAPBOX_API_KEY` enables a satellite-streets map. Without it, the app uses an
+attributed Carto fallback basemap.
 
-```text
-site_id,soil_group,herbicide,depth_mm,days_since_application,relative_concentration
-```
+## Residue assessment date
 
-Alternatively, upload `sample_date` instead of `days_since_application`, and `concentration` instead of `relative_concentration` when top-layer T0 rows are available.
+The default residue assessment date is 90 days beyond application, capped by the
+observed SILO forcing period. The date is adjustable in the app and is shown as
+a vertical marker on time-axis diagnostics.
 
-Site config CSV should include:
+At this stage the app is historical-analysis only: assessment dates cannot
+extend beyond observed climate data. Forecasting via historical climatology is
+kept as a future development item.
 
-```text
-site_id,soil_group,representative_lat,representative_lon,application_date,top_thickness_mm,reference_depth_mm,bottom_depth_mm
-```
+## Outputs
 
-## Data Note
+After a run, the app provides:
 
-Only include review-safe sample data in the public repository. For collaborator-specific or sensitive datasets, use the upload controls at runtime rather than committing the data to GitHub.
+- fitted parameters and diagnostics;
+- assessment concentration summary;
+- observed/fitted, mass-fraction, mass-balance, residual, objective-profile,
+  climate, and bulk-density plots;
+- downloadable CSV/JSON artifacts with provenance metadata.

@@ -1,203 +1,119 @@
+#!/usr/bin/env python3
+"""
+Script: test_validation.py
+Objective: Verify resident-concentration observation CSV validation.
+Author: Yi Yu
+Created: 2026-06-24
+Last updated: 2026-06-24
+Inputs: Uploaded observation-like pandas data frames.
+Outputs: Pytest assertions for prepared CLTF observation tables.
+Usage: python -m pytest apps/herbicide_workbench/tests/test_validation.py -q
+Dependencies: pandas, pytest, workbench
+"""
+
 from __future__ import annotations
 
 import pandas as pd
 import pytest
 
-from workbench.contracts import CaseSelection
+from workbench.site_registry import get_site
 from workbench.validation import (
     ValidationError,
-    build_input_bundle,
     list_cases,
-    prepare_climate,
-    prepare_observations,
-    prepare_site_config,
+    prepare_uploaded_observations,
 )
 
 
-def test_prepare_climate_derives_jdays_et_and_infiltration():
+def test_observation_csv_is_the_only_uploaded_table() -> None:
     raw = pd.DataFrame(
         {
-            "date": ["2024-06-12", "2024-06-13"],
-            "rain_mm": [0.0, 10.0],
-            "Tmax": [18.0, 19.0],
-            "Tmin": [8.0, 9.0],
-        }
-    )
-
-    climate, warnings = prepare_climate(raw, latitude=-32.85, et_factor=1.0)
-
-    assert warnings == []
-    assert list(climate["jdays"]) == [164, 165]
-    assert "et0_mm" in climate.columns
-    assert "cumulative_infiltration_mm" in climate.columns
-    assert climate["cumulative_infiltration_mm"].iloc[-1] >= 0
-
-
-def test_prepare_climate_requires_latitude_when_et_missing():
-    raw = pd.DataFrame(
-        {
-            "date": ["2024-06-12"],
-            "rain_mm": [0.0],
-            "Tmax": [18.0],
-            "Tmin": [8.0],
-        }
-    )
-
-    with pytest.raises(ValidationError, match="representative_lat"):
-        prepare_climate(raw, latitude=None, et_factor=1.0)
-
-
-def test_prepare_climate_preserves_uploaded_days_since_application():
-    raw = pd.DataFrame(
-        {
-            "date": ["2024-06-12", "2024-06-13"],
-            "days_since_application": [10, 11],
-            "rain_mm": [0.0, 10.0],
-            "Tmax": [18.0, 19.0],
-            "Tmin": [8.0, 9.0],
-            "et0_mm": [1.0, 1.0],
-            "cumulative_infiltration_mm": [0.0, 9.0],
-        }
-    )
-
-    climate, _ = prepare_climate(raw, latitude=None, et_factor=1.0)
-
-    assert list(climate["days_since_application"]) == [10, 11]
-
-
-def test_prepare_observations_calculates_relative_concentration():
-    raw = pd.DataFrame(
-        {
-            "site_id": ["SA", "SA"],
-            "soil_group": ["Heavy", "Heavy"],
-            "herbicide": ["Imazapic", "Imazapic"],
-            "depth_mm": [100, 100],
-            "sample_date": ["2024-06-12", "2024-06-27"],
-            "concentration": [20.0, 5.0],
+            "sample_date": ["2024-04-26", "2024-05-06"],
+            "depth_top_mm": [0, 0],
+            "depth_bottom_mm": [150, 150],
+            "concentration_ug_kg": [10.9, 5.1],
             "is_t0": [True, False],
         }
     )
-    site_config = pd.DataFrame(
+
+    prepared = prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
+
+    assert "analysis_concentration_ug_kg" in prepared.columns
+    assert prepared["days_since_application"].tolist() == [0, 10]
+    assert prepared["site_id"].tolist() == ["NSW_Griffith", "NSW_Griffith"]
+    assert prepared["used_for_calibration"].tolist() == [False, True]
+
+
+def test_relative_concentration_schema_is_rejected() -> None:
+    raw = pd.DataFrame({"relative_concentration": [1.0]})
+
+    with pytest.raises(ValidationError, match="concentration_ug_kg"):
+        prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
+
+
+@pytest.mark.parametrize("legacy_column", ["depth_mm", "concentration"])
+def test_legacy_column_aliases_are_rejected(legacy_column: str) -> None:
+    raw = pd.DataFrame(
         {
-            "site_id": ["SA"],
-            "soil_group": ["Heavy"],
-            "application_date": ["2024-06-12"],
-            "top_thickness_mm": [100],
-            "reference_depth_mm": [100],
-            "bottom_depth_mm": [300],
-            "representative_lat": [-32.85],
-            "representative_lon": [135.15],
+            "sample_date": ["2024-04-26"],
+            "depth_top_mm": [0],
+            "depth_bottom_mm": [150],
+            "concentration_ug_kg": [10.9],
+            "is_t0": [True],
+            legacy_column: [10.9],
         }
     )
 
-    observations, warnings = prepare_observations(raw, site_config)
-
-    assert warnings == ["relative_concentration calculated from top-layer T0 concentration"]
-    assert list(observations["days_since_application"]) == [0, 15]
-    assert list(observations["relative_concentration"]) == [1.0, 0.25]
+    with pytest.raises(ValidationError, match="legacy"):
+        prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
 
 
-def test_list_cases_returns_unique_sorted_cases():
-    observations = pd.DataFrame(
+def test_detection_limit_substitution_is_preserved() -> None:
+    raw = pd.DataFrame(
         {
-            "site_id": ["B", "A", "A"],
-            "soil_group": ["Light", "Heavy", "Heavy"],
-            "herbicide": ["H2", "H1", "H1"],
+            "sample_date": ["2024-04-26", "2024-05-06"],
+            "depth_top_mm": [0, 150],
+            "depth_bottom_mm": [150, 300],
+            "concentration_ug_kg": [10.9, 0.0],
+            "is_t0": [True, False],
+            "is_non_detect": [False, True],
+            "detection_limit_ug_kg": [pd.NA, 0.2],
         }
     )
 
-    assert list_cases(observations) == [CaseSelection("A", "Heavy", "H1"), CaseSelection("B", "Light", "H2")]
+    prepared = prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
+
+    assert prepared.loc[1, "analysis_concentration_ug_kg"] == 0.1
+    assert bool(prepared.loc[1, "lod_substituted"])
+    assert prepared.loc[1, "used_for_calibration"]
 
 
-def test_build_input_bundle_filters_selected_case():
-    climate = pd.DataFrame(
+def test_sampling_intervals_must_match_selected_site() -> None:
+    raw = pd.DataFrame(
         {
-            "date": pd.to_datetime(["2024-06-12", "2024-06-13"]),
-            "days_since_application": [0, 1],
-            "rain_mm": [0.0, 0.0],
-            "Tmax": [18.0, 19.0],
-            "Tmin": [8.0, 9.0],
-            "jdays": [164, 165],
-            "et0_mm": [1.0, 1.0],
-            "cumulative_infiltration_mm": [0.0, 0.0],
-        }
-    )
-    observations = pd.DataFrame(
-        {
-            "site_id": ["SA", "SA", "NSW"],
-            "soil_group": ["Heavy", "Light", "Heavy"],
-            "herbicide": ["Imazapic", "Imazapic", "Imazapic"],
-            "depth_mm": [100, 100, 150],
-            "days_since_application": [0, 0, 0],
-            "relative_concentration": [1.0, 1.0, 1.0],
-        }
-    )
-    site_config = pd.DataFrame(
-        {
-            "site_id": ["SA"],
-            "soil_group": ["Heavy"],
-            "application_date": pd.to_datetime(["2024-06-12"]),
-            "top_thickness_mm": [100],
-            "reference_depth_mm": [100],
-            "bottom_depth_mm": [300],
-            "representative_lat": [-32.85],
-            "representative_lon": [135.15],
+            "sample_date": ["2024-04-26"],
+            "depth_top_mm": [0],
+            "depth_bottom_mm": [100],
+            "concentration_ug_kg": [10.9],
+            "is_t0": [True],
         }
     )
 
-    bundle = build_input_bundle(
-        climate=climate,
-        observations=observations,
-        site_config=site_config,
-        case=CaseSelection("SA", "Heavy", "Imazapic"),
-    )
-
-    assert len(bundle.observations) == 1
-    assert bundle.case.site_id == "SA"
+    with pytest.raises(ValidationError, match="interval"):
+        prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
 
 
-def test_build_input_bundle_filters_climate_when_site_id_is_present():
-    climate = pd.DataFrame(
+def test_list_cases_returns_uploaded_or_default_case() -> None:
+    raw = pd.DataFrame(
         {
-            "site_id": ["NSW", "SA", "SA"],
-            "date": pd.to_datetime(["2024-06-12", "2024-06-12", "2024-06-13"]),
-            "days_since_application": [0, 0, 1],
-            "rain_mm": [0.0, 0.0, 1.0],
-            "Tmax": [17.0, 18.0, 19.0],
-            "Tmin": [7.0, 8.0, 9.0],
-            "jdays": [164, 164, 165],
-            "et0_mm": [1.0, 1.0, 1.0],
-            "cumulative_infiltration_mm": [0.0, 0.0, 0.0],
-        }
-    )
-    observations = pd.DataFrame(
-        {
-            "site_id": ["SA"],
+            "sample_date": ["2024-04-26"],
+            "depth_top_mm": [0],
+            "depth_bottom_mm": [150],
+            "concentration_ug_kg": [10.9],
+            "is_t0": [True],
             "soil_group": ["Heavy"],
             "herbicide": ["Imazapic"],
-            "depth_mm": [100],
-            "days_since_application": [0],
-            "relative_concentration": [1.0],
         }
     )
-    site_config = pd.DataFrame(
-        {
-            "site_id": ["SA"],
-            "soil_group": ["Heavy"],
-            "application_date": pd.to_datetime(["2024-06-12"]),
-            "top_thickness_mm": [100],
-            "reference_depth_mm": [100],
-            "bottom_depth_mm": [300],
-            "representative_lat": [-32.85],
-            "representative_lon": [135.15],
-        }
-    )
+    prepared = prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
 
-    bundle = build_input_bundle(
-        climate=climate,
-        observations=observations,
-        site_config=site_config,
-        case=CaseSelection("SA", "Heavy", "Imazapic"),
-    )
-
-    assert list(bundle.climate["site_id"]) == ["SA", "SA"]
+    assert [case.site_id for case in list_cases(prepared)] == ["NSW_Griffith"]

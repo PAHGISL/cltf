@@ -1,0 +1,159 @@
+{
+  "reference_case": "SA_Minnipa / Heavy / Imazapic",
+  "generated_at_utc": "2026-06-24 09:05:25 UTC",
+  "software": {
+    "package_version": "0.1.0",
+    "r_version": "R version 4.5.0 (2025-04-11)"
+  },
+  "source_input_dir": "examples/data/sa_minnipa_heavy_imazapic",
+  "concentration": {
+    "unit": "ug/kg dry soil",
+    "unit_status": "provisional; inferred from the sampled-data structure"
+  },
+  "application_rate": {
+    "value_g_ha": 22.14,
+    "source": "inferred from the geometric mean of positive top-layer T0 replicates",
+    "t0_rows": 3
+  },
+  "observations": {
+    "total_rows": 31,
+    "calibration_rows": 25,
+    "t0_rows_excluded": 6,
+    "zero_rows_excluded": 3,
+    "non_detect_substitutions": 0
+  },
+  "silo": {
+    "source": "Existing 2024 SILO gridded-archive extraction normalized to the shared CLTF cache schema",
+    "request_latitude": -32.831,
+    "request_longitude": 135.1449,
+    "returned_latitude": -32.85,
+    "returned_longitude": 135.15,
+    "cache_file": "silo.csv"
+  },
+  "slga": {
+    "product": "SLGA Bulk Density (whole earth)",
+    "product_version": "v2",
+    "latitude": -32.831,
+    "longitude": 135.1449,
+    "cache_file": "bulk_density.json",
+    "source_status": "provisional SLGA v2-shaped offline fixture",
+    "depth_bands_mm": [
+      {
+        "depth_top_mm": 0,
+        "depth_bottom_mm": 50
+      },
+      {
+        "depth_top_mm": 50,
+        "depth_bottom_mm": 150
+      },
+      {
+        "depth_top_mm": 150,
+        "depth_bottom_mm": 300
+      }
+    ],
+    "top_layer_g_cm3": 1.35,
+    "bottom_layer_g_cm3": 1.4175
+  },
+  "model": {
+    "target_quantity": "layer-average resident concentration",
+    "top_thickness_mm": 100,
+    "bottom_thickness_mm": 200,
+    "effective_porosity": 0.2,
+    "degradation_clock": "total elapsed time",
+    "water_balance": "max(rain + irrigation - PET, 0) accumulated daily",
+    "et_factor": 1,
+    "irrigation_mm": 0,
+    "convolution_method": "trapezoid",
+    "convolution_steps": 2001
+  },
+  "calibration": {
+    "objective": "replicate-level root mean squared log residual",
+    "objective_value": 0.5183,
+    "convergence": 0,
+    "message": "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH",
+    "selected_start": 3,
+    "bounds": [
+      {
+        "parameter": "mu",
+        "lower": 0.05,
+        "upper": 8
+      },
+      {
+        "parameter": "sigma",
+        "lower": 0.1,
+        "upper": 2.5
+      },
+      {
+        "parameter": "R_top",
+        "lower": 0.1,
+        "upper": 20
+      },
+      {
+        "parameter": "R_bottom",
+        "lower": 0.1,
+        "upper": 30
+      },
+      {
+        "parameter": "k",
+        "lower": 0,
+        "upper": 0.05
+      }
+    ],
+    "starts": [
+      {
+        "mu": 1,
+        "sigma": 0.6,
+        "R_top": 2,
+        "R_bottom": 3,
+        "k": 0.005
+      },
+      {
+        "mu": 7.3227,
+        "sigma": 1.6402,
+        "R_top": 13.1741,
+        "R_bottom": 28.0467,
+        "k": 0.0489
+      },
+      {
+        "mu": 7.4997,
+        "sigma": 1.3458,
+        "R_top": 14.1308,
+        "R_bottom": 7.7373,
+        "k": 0.0059
+      },
+      {
+        "mu": 2.3248,
+        "sigma": 1.8678,
+        "R_top": 9.2091,
+        "R_bottom": 13.9226,
+        "k": 0.0237
+      },
+      {
+        "mu": 6.6521,
+        "sigma": 0.4232,
+        "R_top": 14.4103,
+        "R_bottom": 28.2064,
+        "k": 0.028
+      }
+    ],
+    "bound_hits": {
+      "mu": false,
+      "sigma": true,
+      "R_top": false,
+      "R_bottom": false,
+      "k": false
+    },
+    "transport_scales": {
+      "top": 0.1491,
+      "bottom": 2.8147
+    },
+    "identifiability_note": "The current CLTF equations identify the products mu * R_top and mu * R_bottom, not mu and both retardation factors separately."
+  },
+  "input_checksums": {
+    "case.json": "aaad8e653b578c98a74624065da16324",
+    "observations.csv": "da4bb6c9647652be67de0791237e5803",
+    "silo.csv": "47ce0fed9fcb1201ebad54bc0359502c",
+    "silo_metadata.json": "8be508782f88d58d09d5326ccdaeb411",
+    "bulk_density.json": "4a3762b64b08fdba06d5ebd89d3c6d08"
+  }
+}

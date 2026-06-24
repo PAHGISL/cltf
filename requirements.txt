@@ -3,3 +3,4 @@ pandas
 matplotlib
 scipy
 streamlit
+pydeck>=0.9

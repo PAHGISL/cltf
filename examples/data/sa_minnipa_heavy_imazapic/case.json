@@ -1,0 +1,16 @@
+{
+  "site_id": "SA_Minnipa",
+  "soil_group": "Heavy",
+  "herbicide": "Imazapic",
+  "application_date": "2024-06-12",
+  "final_date": "2024-10-28",
+  "top_depth_mm": 100,
+  "bottom_depth_mm": 300,
+  "effective_porosity": 0.2,
+  "et_factor": 1.0,
+  "irrigation_mm": 0.0,
+  "convolution_method": "trapezoid",
+  "convolution_steps": 2001,
+  "concentration_unit": "ug/kg dry soil",
+  "unit_status": "provisional; inferred from the sampled-data structure"
+}

@@ -1,4 +1,15 @@
-"""Validation and preprocessing for uploaded workbench tables."""
+#!/usr/bin/env python3
+"""
+Script: validation.py
+Objective: Validate uploaded resident-concentration observation CSVs.
+Author: Yi Yu
+Created: 2026-06-24
+Last updated: 2026-06-24
+Inputs: Observation CSV data frames and selected shared site records.
+Outputs: Prepared replicate-level CLTF observation tables.
+Usage: Call prepare_uploaded_observations() before CLTF app runs.
+Dependencies: dataclasses, numpy, pandas, cltf, workbench
+"""
 
 from __future__ import annotations
 
@@ -7,12 +18,15 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from workbench.config import ensure_pyclt_path
-from workbench.contracts import CaseSelection, InputBundle
+from workbench.config import ensure_cltf_path
+from workbench.contracts import CaseSelection
+
+ensure_cltf_path()
+from cltf import prepare_non_detects
 
 
 class ValidationError(ValueError):
-    """Raised when uploaded data cannot support a model run."""
+    """Raised when uploaded data cannot support a CLTF model run."""
 
 
 @dataclass(frozen=True)
@@ -21,174 +35,232 @@ class PreparedTable:
     warnings: list[str]
 
 
-def _require_columns(data: pd.DataFrame, required: set[str], table_name: str) -> None:
-    missing = sorted(required - set(data.columns))
+def _require_columns(
+    data: pd.DataFrame,
+    required: set[str],
+    table_name: str,
+) -> None:
+    missing = sorted(required.difference(data.columns))
     if missing:
-        raise ValidationError(f"{table_name} is missing required columns: {', '.join(missing)}")
+        raise ValidationError(
+            f"{table_name} is missing required columns: {', '.join(missing)}"
+        )
 
 
-def _numeric(data: pd.DataFrame, columns: list[str], table_name: str) -> pd.DataFrame:
+def _reject_legacy_columns(data: pd.DataFrame) -> None:
+    legacy_columns = sorted(
+        {"depth_mm", "relative_concentration", "concentration"}.intersection(
+            data.columns
+        )
+    )
+    if legacy_columns:
+        raise ValidationError(
+            "Uploaded observations use legacy columns "
+            f"{', '.join(legacy_columns)}. Use depth_top_mm, "
+            "depth_bottom_mm, and concentration_ug_kg."
+        )
+
+
+def _to_bool(values: pd.Series, default: bool = False) -> pd.Series:
+    if values.empty:
+        return values.astype(bool)
+    if values.dtype == bool:
+        return values.fillna(default).astype(bool)
+    normalized = values.fillna(default).astype(str).str.strip().str.lower()
+    return normalized.isin({"true", "t", "1", "yes", "y", "t0"})
+
+
+def _numeric(
+    data: pd.DataFrame,
+    columns: list[str],
+    table_name: str,
+) -> pd.DataFrame:
     result = data.copy()
     for column in columns:
         if column in result.columns:
             result[column] = pd.to_numeric(result[column], errors="coerce")
-            if result[column].isna().any():
-                raise ValidationError(f"{table_name}.{column} contains non-numeric or missing values")
+            if result[column].isna().any() and column != "detection_limit_ug_kg":
+                raise ValidationError(
+                    f"{table_name}.{column} contains non-numeric or missing values"
+                )
     return result
 
 
-def prepare_site_config(raw: pd.DataFrame | None) -> pd.DataFrame:
-    if raw is None or raw.empty:
-        return pd.DataFrame()
+def _infer_application_date(result: pd.DataFrame) -> pd.Timestamp:
+    if "application_date" in result.columns:
+        application_dates = pd.to_datetime(
+            result["application_date"],
+            errors="coerce",
+        ).dropna()
+        if application_dates.empty:
+            raise ValidationError("observations.application_date contains no valid dates")
+        return pd.Timestamp(application_dates.min()).normalize()
+
+    if "is_t0" not in result.columns:
+        if "timepoint" in result.columns:
+            result["is_t0"] = (
+                result["timepoint"].astype(str).str.strip().str.upper().eq("T0")
+            )
+        else:
+            raise ValidationError(
+                "observations requires application_date or is_t0/timepoint"
+            )
+    t0_dates = result.loc[result["is_t0"], "sample_date"]
+    if t0_dates.empty:
+        raise ValidationError(
+            "At least one T0 row is required when application_date is absent"
+        )
+    return pd.Timestamp(t0_dates.min()).normalize()
+
+
+def _validate_intervals(result: pd.DataFrame, site: dict[str, object]) -> None:
+    top_depth = float(site["top_depth_mm"])
+    bottom_depth = float(site["bottom_depth_mm"])
+    top_interval = result["depth_top_mm"].eq(0) & result["depth_bottom_mm"].eq(
+        top_depth
+    )
+    bottom_interval = result["depth_top_mm"].eq(top_depth) & result[
+        "depth_bottom_mm"
+    ].eq(bottom_depth)
+    invalid = ~(top_interval | bottom_interval)
+    if invalid.any():
+        raise ValidationError(
+            "Observation depth interval must match the selected site's "
+            f"0-{top_depth:g} mm or {top_depth:g}-{bottom_depth:g} mm layers."
+        )
+
+
+def prepare_uploaded_observations(
+    raw: pd.DataFrame,
+    site: dict[str, object],
+    soil_group: str | None = None,
+    herbicide: str | None = None,
+) -> pd.DataFrame:
+    """Prepare uploaded observation rows for CLTF fitting and simulation."""
+
+    if raw.empty:
+        raise ValidationError("observations is empty")
+    _reject_legacy_columns(raw)
+    _require_columns(
+        raw,
+        {
+            "sample_date",
+            "depth_top_mm",
+            "depth_bottom_mm",
+            "concentration_ug_kg",
+        },
+        "observations",
+    )
 
     result = raw.copy()
-    _require_columns(result, {"site_id", "soil_group"}, "site_config")
-    for column in ("application_date", "final_sample_date"):
-        if column in result.columns:
-            result[column] = pd.to_datetime(result[column], errors="coerce")
-            if result[column].isna().any():
-                raise ValidationError(f"site_config.{column} contains invalid dates")
+    result["sample_date"] = pd.to_datetime(
+        result["sample_date"],
+        errors="coerce",
+    ).dt.normalize()
+    if result["sample_date"].isna().any():
+        raise ValidationError("observations.sample_date contains invalid dates")
+
     result = _numeric(
         result,
         [
-            "representative_lat",
-            "representative_lon",
-            "top_thickness_mm",
-            "reference_depth_mm",
-            "bottom_depth_mm",
+            "depth_top_mm",
+            "depth_bottom_mm",
+            "concentration_ug_kg",
+            "detection_limit_ug_kg",
         ],
-        "site_config",
+        "observations",
     )
-    return result
+    if "is_t0" in result.columns:
+        result["is_t0"] = _to_bool(result["is_t0"])
+    elif "timepoint" in result.columns:
+        result["is_t0"] = (
+            result["timepoint"].astype(str).str.strip().str.upper().eq("T0")
+        )
+    else:
+        result["is_t0"] = False
 
+    application_date = _infer_application_date(result)
+    result["application_date"] = application_date
+    result["days_since_application"] = (
+        result["sample_date"] - application_date
+    ).dt.days.astype(int)
+    if result["days_since_application"].lt(0).any():
+        raise ValidationError("observations contain dates before application_date")
 
-def prepare_climate(raw: pd.DataFrame, latitude: float | None, et_factor: float = 1.0) -> tuple[pd.DataFrame, list[str]]:
-    _require_columns(raw, {"date", "rain_mm", "Tmax", "Tmin"}, "climate")
-    result = raw.copy()
-    warnings: list[str] = []
-    result["date"] = pd.to_datetime(result["date"], errors="coerce").dt.normalize()
-    if result["date"].isna().any():
-        raise ValidationError("climate.date contains invalid dates")
-    result = _numeric(
-        result,
-        ["rain_mm", "Tmax", "Tmin", "et0_mm", "cumulative_infiltration_mm", "irrigation_mm", "days_since_application"],
-        "climate",
+    _validate_intervals(result, site)
+
+    result["site_id"] = result.get("site_id", site["site_id"])
+    result["soil_group"] = result.get(
+        "soil_group",
+        soil_group or site.get("default_soil_group", "Heavy"),
     )
-    result = result.sort_values("date").reset_index(drop=True)
-    if "jdays" not in result.columns:
-        result["jdays"] = result["date"].dt.dayofyear
-    if "et0_mm" not in result.columns:
-        if latitude is None or pd.isna(latitude):
-            raise ValidationError("representative_lat is required when climate.et0_mm is not uploaded")
-        ensure_pyclt_path()
-        from pyclt.climate import calc_et
-
-        result["et0_mm"] = calc_et(latitude_deg=float(latitude), data=result[["jdays", "Tmax", "Tmin"]])
-    if "irrigation_mm" not in result.columns:
-        result["irrigation_mm"] = 0.0
-    if "cumulative_infiltration_mm" not in result.columns:
-        ensure_pyclt_path()
-        from pyclt.infiltration import cumulative_infiltration
-
-        water_in = result["rain_mm"].to_numpy(dtype=float) + result["irrigation_mm"].to_numpy(dtype=float)
-        result["cumulative_infiltration_mm"] = cumulative_infiltration(
-            water_in,
-            result["et0_mm"].to_numpy(dtype=float),
-            et_factor=float(et_factor),
-        )
-    if "days_since_application" not in result.columns:
-        result["days_since_application"] = np.arange(len(result), dtype=int)
-    result["days_since_application"] = result["days_since_application"].astype(int)
-    return result, warnings
-
-
-def prepare_observations(raw: pd.DataFrame, site_config: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
-    required = {"site_id", "soil_group", "herbicide", "depth_mm"}
-    _require_columns(raw, required, "observations")
-    if "sample_date" not in raw.columns and "days_since_application" not in raw.columns:
-        raise ValidationError("observations requires either sample_date or days_since_application")
-    if "relative_concentration" not in raw.columns and "concentration" not in raw.columns:
-        raise ValidationError("observations requires either relative_concentration or concentration")
-
-    result = raw.copy()
-    warnings: list[str] = []
-    result = _numeric(result, ["depth_mm", "days_since_application", "relative_concentration", "concentration"], "observations")
-    if "sample_date" in result.columns:
-        result["sample_date"] = pd.to_datetime(result["sample_date"], errors="coerce").dt.normalize()
-        if result["sample_date"].isna().any():
-            raise ValidationError("observations.sample_date contains invalid dates")
-
-    if "days_since_application" not in result.columns:
-        if site_config.empty or "application_date" not in site_config.columns:
-            raise ValidationError("site_config.application_date is required when observations.days_since_application is missing")
-        app_dates = site_config[["site_id", "soil_group", "application_date"]].drop_duplicates().copy()
-        app_dates["application_date"] = pd.to_datetime(app_dates["application_date"], errors="coerce")
-        if app_dates["application_date"].isna().any():
-            raise ValidationError("site_config.application_date contains invalid dates")
-        result = result.merge(app_dates, on=["site_id", "soil_group"], how="left")
-        if result["application_date"].isna().any():
-            raise ValidationError("application_date is missing for one or more observation rows")
-        result["days_since_application"] = (result["sample_date"] - result["application_date"]).dt.days
-
-    if "relative_concentration" not in result.columns:
-        if "is_t0" not in result.columns:
-            raise ValidationError("observations.is_t0 is required to infer relative_concentration from concentration")
-        if site_config.empty or "top_thickness_mm" not in site_config.columns:
-            raise ValidationError("site_config.top_thickness_mm is required to infer relative_concentration")
-        depth_lookup = site_config[["site_id", "soil_group", "top_thickness_mm"]].drop_duplicates()
-        result = result.merge(depth_lookup, on=["site_id", "soil_group"], how="left")
-        top_t0 = (
-            result.loc[result["is_t0"].astype(bool) & (result["depth_mm"] == result["top_thickness_mm"])]
-            .groupby(["site_id", "soil_group", "herbicide"], as_index=False)["concentration"]
-            .mean()
-            .rename(columns={"concentration": "t0_top_mean"})
-        )
-        result = result.merge(top_t0, on=["site_id", "soil_group", "herbicide"], how="left")
-        if result["t0_top_mean"].isna().any():
-            raise ValidationError("top-layer T0 concentration is missing for relative concentration calculation")
-        result["relative_concentration"] = result["concentration"] / result["t0_top_mean"]
-        warnings.append("relative_concentration calculated from top-layer T0 concentration")
+    result["herbicide"] = result.get(
+        "herbicide",
+        herbicide or site.get("default_herbicide", "Imazapic"),
+    )
 
     if "replicate_id" not in result.columns:
         result["replicate_id"] = (
-            result.groupby(["site_id", "soil_group", "herbicide", "depth_mm", "days_since_application"]).cumcount() + 1
+            result.groupby(
+                [
+                    "site_id",
+                    "soil_group",
+                    "herbicide",
+                    "depth_top_mm",
+                    "depth_bottom_mm",
+                    "days_since_application",
+                ],
+                dropna=False,
+            ).cumcount()
+            + 1
         )
-    return result.reset_index(drop=True), warnings
+    if "is_non_detect" not in result.columns:
+        result["is_non_detect"] = False
+    else:
+        result["is_non_detect"] = _to_bool(result["is_non_detect"])
+    if "detection_limit_ug_kg" not in result.columns:
+        result["detection_limit_ug_kg"] = np.nan
+
+    non_detects = prepare_non_detects(
+        result["concentration_ug_kg"],
+        result["is_non_detect"],
+        result["detection_limit_ug_kg"],
+    )
+    result["analysis_concentration_ug_kg"] = non_detects[
+        "analysis_concentration_ug_kg"
+    ]
+    result["lod_substituted"] = non_detects["lod_substituted"]
+    result["excluded_zero"] = non_detects["excluded_zero"]
+    result["is_zero_reported"] = (
+        result["concentration_ug_kg"].eq(0) & ~result["lod_substituted"]
+    )
+    result["used_for_calibration"] = (
+        ~result["is_t0"]
+        & np.isfinite(result["analysis_concentration_ug_kg"])
+        & result["analysis_concentration_ug_kg"].gt(0)
+    )
+    result["unit_status"] = result.get(
+        "unit_status",
+        "uploaded_ug_kg_dry_soil",
+    )
+
+    return result.reset_index(drop=True)
 
 
 def list_cases(observations: pd.DataFrame) -> list[CaseSelection]:
+    """Return unique site/soil/herbicide cases in prepared observations."""
+
+    _require_columns(
+        observations,
+        {"site_id", "soil_group", "herbicide"},
+        "observations",
+    )
     cases = (
         observations[["site_id", "soil_group", "herbicide"]]
         .drop_duplicates()
         .sort_values(["site_id", "soil_group", "herbicide"])
     )
-    return [CaseSelection(row.site_id, row.soil_group, row.herbicide) for row in cases.itertuples(index=False)]
-
-
-def build_input_bundle(
-    climate: pd.DataFrame,
-    observations: pd.DataFrame,
-    site_config: pd.DataFrame,
-    case: CaseSelection,
-) -> InputBundle:
-    case_obs = observations.loc[
-        (observations["site_id"] == case.site_id)
-        & (observations["soil_group"] == case.soil_group)
-        & (observations["herbicide"] == case.herbicide)
-    ].copy()
-    if case_obs.empty:
-        raise ValidationError(f"No observations found for {case.site_id} / {case.soil_group} / {case.herbicide}")
-
-    case_site = site_config.loc[
-        (site_config["site_id"] == case.site_id) & (site_config["soil_group"] == case.soil_group)
-    ].copy()
-    if case_site.empty:
-        raise ValidationError(f"No site configuration found for {case.site_id} / {case.soil_group}")
-
-    case_climate = climate.copy()
-    if "site_id" in case_climate.columns:
-        case_climate = case_climate.loc[case_climate["site_id"] == case.site_id].copy()
-        if case_climate.empty:
-            raise ValidationError(f"No climate rows found for {case.site_id}")
-
-    return InputBundle(climate=case_climate, observations=case_obs, site_config=case_site, case=case)
+    return [
+        CaseSelection(row.site_id, row.soil_group, row.herbicide)
+        for row in cases.itertuples(index=False)
+    ]

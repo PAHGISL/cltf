@@ -1,0 +1,4 @@
+"depth_top_mm","depth_bottom_mm","estimate_g_cm3","lower_g_cm3","upper_g_cm3","source"
+0,50,1.43,1.29,1.58,"credentialed SLGA v2 whole-earth bulk density retrieval"
+50,150,1.49,1.35,1.64,"credentialed SLGA v2 whole-earth bulk density retrieval"
+150,300,1.53,1.39,1.68,"credentialed SLGA v2 whole-earth bulk density retrieval"

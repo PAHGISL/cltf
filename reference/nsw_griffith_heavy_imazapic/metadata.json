@@ -1,42 +1,42 @@
 {
-  "reference_case": "SA_Minnipa / Heavy / Imazapic",
-  "generated_at_utc": "2026-06-24 08:47:42 UTC",
+  "reference_case": "NSW_Griffith / Heavy / Imazapic",
+  "generated_at_utc": "2026-06-24 08:47:31 UTC",
   "software": {
     "package_version": "0.1.0",
     "r_version": "R version 4.5.0 (2025-04-11)"
   },
-  "source_input_dir": "/home/603/yy4778/.config/superpowers/worktrees/PyCLT/cltf-monorepo/examples/data/sa_minnipa_heavy_imazapic",
+  "source_input_dir": "/home/603/yy4778/.config/superpowers/worktrees/PyCLT/cltf-monorepo/examples/data/nsw_griffith_heavy_imazapic",
   "concentration": {
     "unit": "ug/kg dry soil",
     "unit_status": "provisional; inferred from the sampled-data structure"
   },
   "application_rate": {
-    "value_g_ha": 22.14,
+    "value_g_ha": 24.0345,
     "source": "inferred from the geometric mean of positive top-layer T0 replicates",
     "t0_rows": 3
   },
   "observations": {
-    "total_rows": 31,
-    "calibration_rows": 25,
+    "total_rows": 30,
+    "calibration_rows": 24,
     "t0_rows_excluded": 6,
     "zero_rows_excluded": 3,
     "non_detect_substitutions": 0
   },
   "silo": {
     "source": "Existing 2024 SILO gridded-archive extraction normalized to the shared CLTF cache schema",
-    "request_latitude": -32.831,
-    "request_longitude": 135.1449,
-    "returned_latitude": -32.85,
-    "returned_longitude": 135.15,
+    "request_latitude": -34.195,
+    "request_longitude": 146.0888,
+    "returned_latitude": -34.2,
+    "returned_longitude": 146.1,
     "cache_file": "silo.csv"
   },
   "slga": {
     "product": "SLGA Bulk Density (whole earth)",
     "product_version": "v2",
-    "latitude": -32.831,
-    "longitude": 135.1449,
+    "latitude": -34.195,
+    "longitude": 146.0888,
     "cache_file": "bulk_density.json",
-    "source_status": "provisional SLGA v2-shaped offline fixture",
+    "source_status": "credentialed SLGA v2 whole-earth bulk density retrieval",
     "depth_bands_mm": [
       {
         "depth_top_mm": 0,
@@ -51,13 +51,13 @@
         "depth_bottom_mm": 300
       }
     ],
-    "top_layer_g_cm3": 1.35,
-    "bottom_layer_g_cm3": 1.4175
+    "top_layer_g_cm3": 1.47,
+    "bottom_layer_g_cm3": 1.53
   },
   "model": {
     "target_quantity": "layer-average resident concentration",
-    "top_thickness_mm": 100,
-    "bottom_thickness_mm": 200,
+    "top_thickness_mm": 150,
+    "bottom_thickness_mm": 150,
     "effective_porosity": 0.2,
     "degradation_clock": "total elapsed time",
     "water_balance": "max(rain + irrigation - PET, 0) accumulated daily",
@@ -68,7 +68,7 @@
   },
   "calibration": {
     "objective": "replicate-level root mean squared log residual",
-    "objective_value": 0.5183,
+    "objective_value": 0.4741,
     "convergence": 0,
     "message": "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH",
     "selected_start": 3,
@@ -137,23 +137,23 @@
       }
     ],
     "bound_hits": {
-      "mu": false,
+      "mu": true,
       "sigma": true,
       "R_top": false,
       "R_bottom": false,
-      "k": false
+      "k": true
     },
     "transport_scales": {
-      "top": 0.1491,
-      "bottom": 2.8147
+      "top": 0.4167,
+      "bottom": 0.015
     },
     "identifiability_note": "The current CLTF equations identify the products mu * R_top and mu * R_bottom, not mu and both retardation factors separately."
   },
   "input_checksums": {
-    "case.json": "aaad8e653b578c98a74624065da16324",
-    "observations.csv": "da4bb6c9647652be67de0791237e5803",
-    "silo.csv": "47ce0fed9fcb1201ebad54bc0359502c",
-    "silo_metadata.json": "8be508782f88d58d09d5326ccdaeb411",
-    "bulk_density.json": "4a3762b64b08fdba06d5ebd89d3c6d08"
+    "case.json": "d1e5373568903a0991291da78bea91b1",
+    "observations.csv": "963c94dcce74a307df719663c5f292a7",
+    "silo.csv": "11f9cae2f9c1f04b65b56c9a11ae7480",
+    "silo_metadata.json": "80e70f231ed1ec090dcf0e2b0228d82c",
+    "bulk_density.json": "7989805b345c5e59112ada75d43c3f1d"
   }
 }

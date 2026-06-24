@@ -1,0 +1,6 @@
+"parameter","estimate","lower","upper","bound_hit"
+"mu",0.05,0.05,8,TRUE
+"sigma",2.5,0.1,2.5,TRUE
+"R_top",8.33403137635746,0.1,20,FALSE
+"R_bottom",0.299806172484237,0.1,30,FALSE
+"k",0,0,0.05,TRUE

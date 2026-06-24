@@ -200,7 +200,7 @@ slga_product_table <- function(payload) {
   scores <- vapply(
     candidates,
     function(candidate) {
-      normalized <- tolower(gsub("[^a-z0-9]", "", names(candidate)))
+      normalized <- gsub("[^a-z0-9]", "", tolower(names(candidate)))
       sum(grepl("cog|path|url|model", normalized))
     },
     numeric(1)
@@ -209,8 +209,8 @@ slga_product_table <- function(payload) {
 }
 
 slga_match_column <- function(table, aliases, required = TRUE) {
-  normalized_names <- tolower(gsub("[^a-z0-9]", "", names(table)))
-  normalized_aliases <- tolower(gsub("[^a-z0-9]", "", aliases))
+  normalized_names <- gsub("[^a-z0-9]", "", tolower(names(table)))
+  normalized_aliases <- gsub("[^a-z0-9]", "", tolower(aliases))
   index <- match(normalized_aliases, normalized_names, nomatch = 0L)
   index <- index[index > 0L]
   if (length(index) == 0L) {
@@ -243,7 +243,7 @@ slga_select_products <- function(payload) {
   products <- slga_product_table(payload)
   cog_column <- slga_match_column(
     products,
-    c("COGPath", "COG", "CloudOptimizedGeoTIFF", "URL", "FilePath")
+    c("COGPath", "COGsPath", "COG", "CloudOptimizedGeoTIFF", "URL", "FilePath")
   )
   component_column <- slga_match_column(
     products,
@@ -324,7 +324,7 @@ slga_extract_numeric_value <- function(payload) {
     "bandvalue",
     "result"
   )
-  normalized_names <- tolower(gsub("[^a-z0-9]", "", names(payload)))
+  normalized_names <- gsub("[^a-z0-9]", "", tolower(names(payload)))
   for (preferred_name in preferred_names) {
     index <- which(normalized_names == preferred_name)
     for (candidate_index in index) {
@@ -504,7 +504,10 @@ fetch_slga_bulk_density <- function(
     estimate_g_cm3 = NA_real_,
     lower_g_cm3    = NA_real_,
     upper_g_cm3    = NA_real_,
-    source          = rep("SLGA v2 whole-earth bulk density", 3L),
+    source          = rep(
+      "credentialed SLGA v2 whole-earth bulk density retrieval",
+      3L
+    ),
     stringsAsFactors = FALSE
   )
   for (index in seq_len(nrow(products))) {

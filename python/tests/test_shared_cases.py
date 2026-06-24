@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cltf import parse_silo_csv
+from cltf import parse_silo_csv, parse_slga_bulk_density
 
 
 ROOT = Path(__file__).parents[2]
@@ -74,3 +74,22 @@ def test_shared_silo_forcing_covers_observation_periods() -> None:
     assert len(sa) == 139
     assert sa["date"].min() == pd.Timestamp("2024-06-12")
     assert sa["date"].max() == pd.Timestamp("2024-10-28")
+
+
+def test_shared_slga_bulk_density_inputs_cover_standard_bands() -> None:
+    nsw = parse_slga_bulk_density(
+        DATA / "nsw_griffith_heavy_imazapic" / "bulk_density.json"
+    )
+    sa = parse_slga_bulk_density(
+        DATA / "sa_minnipa_heavy_imazapic" / "bulk_density.json"
+    )
+
+    assert nsw["depth_top_mm"].tolist() == [0.0, 50.0, 150.0]
+    assert nsw["depth_bottom_mm"].tolist() == [50.0, 150.0, 300.0]
+    assert sa["depth_top_mm"].tolist() == [0.0, 50.0, 150.0]
+    assert sa["depth_bottom_mm"].tolist() == [50.0, 150.0, 300.0]
+    assert all(
+        "credentialed SLGA v2 whole-earth" in source
+        for source in nsw["source"]
+    )
+    assert any("provisional" in source.lower() for source in sa["source"])

@@ -70,7 +70,7 @@ def test_slga_products_are_drilled_and_key_is_not_cached(
             rows.append(
                 {
                     "Component": component,
-                    "COGPath": (
+                    "COGsPath": (
                         f"https://example.test/BDW_{depth}_{suffix}.tif"
                     ),
                 }
@@ -94,6 +94,10 @@ def test_slga_products_are_drilled_and_key_is_not_cached(
     np.testing.assert_allclose(
         result["estimate_g_cm3"],
         [1.32, 1.38, 1.43],
+    )
+    assert all(
+        "credentialed SLGA v2 whole-earth" in source
+        for source in result["source"]
     )
     cache_text = Path(result.attrs["cache_path"]).read_text()
     assert "test-key-not-for-cache" not in cache_text

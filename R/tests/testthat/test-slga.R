@@ -51,6 +51,16 @@ test_that("manual override bypasses SLGA network access", {
   expect_true(all(result$source == "manual_override"))
 })
 
+test_that("SLGA Drill extraction prefers mixed-case Value fields", {
+  payload <- data.frame(
+    Longitude = 146.0888,
+    Latitude  = -34.195,
+    Value     = 1.43
+  )
+
+  expect_equal(slga_extract_numeric_value(payload), 1.43)
+})
+
 test_that("SLGA product metadata is drilled and normalized into the cache", {
   cache_dir <- withr::local_tempdir()
   depths <- c("000_005", "005_015", "015_030")
@@ -60,7 +70,7 @@ test_that("SLGA product metadata is drilled and normalized into the cache", {
     Component = statistics,
     stringsAsFactors = FALSE
   )
-  products$COGPath <- paste0(
+  products$COGsPath <- paste0(
     "https://example.test/BDW_",
     products$depth,
     "_",
@@ -85,6 +95,11 @@ test_that("SLGA product metadata is drilled and normalized into the cache", {
 
   expect_equal(result$depth_bottom_mm, c(50, 150, 300))
   expect_equal(result$estimate_g_cm3, c(1.32, 1.38, 1.43))
+  expect_true(all(grepl(
+    "credentialed SLGA v2 whole-earth",
+    result$source,
+    fixed = TRUE
+  )))
   cache_text <- paste(readLines(attr(result, "cache_path")), collapse = "\n")
   expect_false(grepl("test-key-not-for-cache", cache_text, fixed = TRUE))
 })

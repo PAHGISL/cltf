@@ -70,3 +70,31 @@ test_that("shared SILO forcing covers each observation period", {
   expect_equal(nrow(sa), 139)
   expect_equal(range(sa$date), as.Date(c("2024-06-12", "2024-10-28")))
 })
+
+test_that("shared SLGA bulk-density inputs cover standard bands", {
+  nsw_path <- shared_case_path(
+    "nsw_griffith_heavy_imazapic",
+    "bulk_density.json"
+  )
+  sa_path <- shared_case_path(
+    "sa_minnipa_heavy_imazapic",
+    "bulk_density.json"
+  )
+  nsw <- parse_slga_bulk_density(nsw_path)
+  sa <- parse_slga_bulk_density(sa_path)
+
+  expect_equal(nsw$depth_top_mm, c(0, 50, 150))
+  expect_equal(nsw$depth_bottom_mm, c(50, 150, 300))
+  expect_equal(sa$depth_top_mm, c(0, 50, 150))
+  expect_equal(sa$depth_bottom_mm, c(50, 150, 300))
+  expect_true(all(grepl(
+    "credentialed SLGA v2 whole-earth",
+    nsw$source,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    "provisional",
+    sa$source,
+    ignore.case = TRUE
+  )))
+})

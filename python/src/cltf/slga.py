@@ -268,7 +268,14 @@ def _select_products(payload: object) -> pd.DataFrame:
     products = _product_table(payload)
     cog_column = _match_column(
         products,
-        ("COGPath", "COG", "CloudOptimizedGeoTIFF", "URL", "FilePath"),
+        (
+            "COGPath",
+            "COGsPath",
+            "COG",
+            "CloudOptimizedGeoTIFF",
+            "URL",
+            "FilePath",
+        ),
     )
     component_column = _match_column(
         products,
@@ -510,7 +517,9 @@ def fetch_slga_bulk_density(
     bands["estimate_g_cm3"] = np.nan
     bands["lower_g_cm3"] = np.nan
     bands["upper_g_cm3"] = np.nan
-    bands["source"] = "SLGA v2 whole-earth bulk density"
+    bands["source"] = (
+        "credentialed SLGA v2 whole-earth bulk density retrieval"
+    )
     for product in products.itertuples(index=False):
         mask = (
             bands["depth_top_mm"].eq(product.depth_top_mm)

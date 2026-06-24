@@ -10,7 +10,11 @@
 # Dependencies: testthat, cltf, jsonlite
 
 shared_reference_path <- function(filename) {
-  testthat::test_path("..", "..", "..", "reference", filename)
+  path <- testthat::test_path("..", "..", "..", "reference", filename)
+  if (!file.exists(path)) {
+    skip("Shared primitive reference files are available only from a source checkout.")
+  }
+  path
 }
 
 test_that("R primitives match shared expected outputs", {

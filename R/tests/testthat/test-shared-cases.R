@@ -10,7 +10,11 @@
 # Dependencies: testthat, cltf, jsonlite
 
 shared_case_path <- function(...) {
-  testthat::test_path("..", "..", "..", "examples", "data", ...)
+  path <- testthat::test_path("..", "..", "..", "examples", "data", ...)
+  if (!file.exists(path)) {
+    skip("Shared case input files are available only from a source checkout.")
+  }
+  path
 }
 
 test_that("shared case registry defines both approved sites", {

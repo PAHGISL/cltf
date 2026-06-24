@@ -18,6 +18,9 @@ test_that("reference runner accepts both case identifiers", {
     "R",
     "run_reference_case.R"
   )
+  if (!file.exists(script)) {
+    skip("The shared R reference runner is available only from a source checkout.")
+  }
   help <- system2("Rscript", c(script, "--help"), stdout = TRUE)
 
   expect_true(any(grepl("--case", help, fixed = TRUE)))

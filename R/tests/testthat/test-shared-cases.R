@@ -54,3 +54,19 @@ test_that("shared showcase observations preserve replicate rows", {
   expect_equal(nrow(sa), 31)
   expect_equal(sum(sa$used_for_calibration), 25)
 })
+
+test_that("shared SILO forcing covers each observation period", {
+  nsw <- parse_silo_csv(shared_case_path(
+    "nsw_griffith_heavy_imazapic",
+    "silo.csv"
+  ))
+  sa <- parse_silo_csv(shared_case_path(
+    "sa_minnipa_heavy_imazapic",
+    "silo.csv"
+  ))
+
+  expect_equal(nrow(nsw), 147)
+  expect_equal(range(nsw$date), as.Date(c("2024-04-26", "2024-09-19")))
+  expect_equal(nrow(sa), 139)
+  expect_equal(range(sa$date), as.Date(c("2024-06-12", "2024-10-28")))
+})

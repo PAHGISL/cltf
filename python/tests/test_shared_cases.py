@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from cltf import parse_silo_csv
+
 
 ROOT = Path(__file__).parents[2]
 DATA = ROOT / "examples" / "data"
@@ -57,3 +59,18 @@ def test_shared_observations_preserve_replicates() -> None:
     assert sorted(nsw["depth_bottom_mm"].unique()) == [150.0, 300.0]
     assert len(sa) == 31
     assert int(sa["used_for_calibration"].sum()) == 25
+
+
+def test_shared_silo_forcing_covers_observation_periods() -> None:
+    nsw = parse_silo_csv(
+        DATA / "nsw_griffith_heavy_imazapic" / "silo.csv"
+    )
+    sa = parse_silo_csv(
+        DATA / "sa_minnipa_heavy_imazapic" / "silo.csv"
+    )
+    assert len(nsw) == 147
+    assert nsw["date"].min() == pd.Timestamp("2024-04-26")
+    assert nsw["date"].max() == pd.Timestamp("2024-09-19")
+    assert len(sa) == 139
+    assert sa["date"].min() == pd.Timestamp("2024-06-12")
+    assert sa["date"].max() == pd.Timestamp("2024-10-28")

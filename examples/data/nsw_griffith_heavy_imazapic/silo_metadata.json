@@ -1,0 +1,11 @@
+{
+  "source": "Existing 2024 SILO gridded-archive extraction normalized to the shared CLTF cache schema",
+  "source_file": "apps/herbicide_workbench/sample_data/daily_climate.csv",
+  "request_latitude": -34.194974000000002,
+  "request_longitude": 146.08877000000001,
+  "grid_latitude": -34.200000000000003,
+  "grid_longitude": 146.09999999999999,
+  "start_date": "2024-04-26",
+  "end_date": "2024-09-19",
+  "raw_cache_file": "silo.csv"
+}

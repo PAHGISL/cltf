@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/cltf/__init__.py
-src/cltf.egg-info/PKG-INFO
-src/cltf.egg-info/SOURCES.txt
-src/cltf.egg-info/dependency_links.txt
-src/cltf.egg-info/requires.txt
-src/cltf.egg-info/top_level.txt
-tests/test_package.py

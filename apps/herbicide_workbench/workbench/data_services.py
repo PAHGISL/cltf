@@ -4,7 +4,7 @@ Script: data_services.py
 Objective: Prepare cache-first climate and soil inputs for the CLTF workbench.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Shared case directories, optional SILO credentials, and optional TERN API key.
 Outputs: ExternalInputs containing forcing, bulk density, metadata, and warnings.
 Usage: Import prepare_external_inputs from workbench.data_services.
@@ -214,6 +214,49 @@ def _weighted_estimate(
     return float(weighted.loc[0, "estimate_g_cm3"])
 
 
+def _demo_soil_properties(
+    site_id: str,
+    top_depth_mm: float,
+    bottom_depth_mm: float,
+) -> pd.DataFrame:
+    """Return provisional SOC and clay demo values for app visualisation."""
+
+    values = {
+        "NSW_Griffith": {
+            "SOC": (1.15, 0.62),
+            "Clay": (31.0, 36.0),
+        },
+        "SA_Minnipa": {
+            "SOC": (0.78, 0.42),
+            "Clay": (24.0, 28.0),
+        },
+    }
+    site_values = values.get(
+        site_id,
+        {
+            "SOC": (1.0, 0.5),
+            "Clay": (30.0, 34.0),
+        },
+    )
+    rows = []
+    for property_name, estimates in site_values.items():
+        for depth_top, depth_bottom, estimate in (
+            (0.0, top_depth_mm, estimates[0]),
+            (top_depth_mm, bottom_depth_mm, estimates[1]),
+        ):
+            rows.append(
+                {
+                    "property": property_name,
+                    "depth_top_mm": depth_top,
+                    "depth_bottom_mm": depth_bottom,
+                    "estimate": estimate,
+                    "unit": "%",
+                    "source": "demo provisional soil-property values",
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def prepare_external_inputs(
     case: CaseSelection,
     environment: Mapping[str, str] | None = None,
@@ -297,12 +340,18 @@ def prepare_external_inputs(
             "bulk_density_cache_file": str(input_dir / "bulk_density.json"),
             "silo_grid_latitude": site.get("silo_latitude"),
             "silo_grid_longitude": site.get("silo_longitude"),
+            "soil_properties_source": "demo_provisional",
         }
     )
 
     return ExternalInputs(
         forcing=forcing,
         bulk_density=bulk_density,
+        soil_properties=_demo_soil_properties(
+            case.site_id,
+            top_depth,
+            bottom_depth,
+        ),
         top_bulk_density_g_cm3=top_bulk_density,
         bottom_bulk_density_g_cm3=bottom_bulk_density,
         warnings=warnings,

@@ -3,7 +3,7 @@
 # Objective: Verify the mathematical definition and validation of one CLTF layer.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-24
+# Last updated: 2026-06-25
 # Inputs: cltf single-layer functions.
 # Outputs: Testthat assertions.
 # Usage: Loaded by testthat::test_local("R", filter = "cltf-single-layer").
@@ -41,4 +41,39 @@ test_that("single-layer density normalizes to one", {
   )
 
   expect_equal(result$value, 1, tolerance = 1e-8)
+})
+
+test_that("continuous interval probabilities follow depth crossing CDF", {
+  y <- c(0, 100, 400)
+  intervals <- data.frame(
+    depth_top_mm    = c(0, 100),
+    depth_bottom_mm = c(100, 300)
+  )
+
+  result <- cltf_interval_probabilities(
+    y_mm        = y,
+    intervals   = intervals,
+    mu          = 1,
+    sigma       = 0.5,
+    retardation = 2
+  )
+  crossing_100 <- cltf_depth_cdf(
+    y_mm        = y,
+    depth_mm    = 100,
+    mu          = 1,
+    sigma       = 0.5,
+    retardation = 2
+  )
+  crossing_300 <- cltf_depth_cdf(
+    y_mm        = y,
+    depth_mm    = 300,
+    mu          = 1,
+    sigma       = 0.5,
+    retardation = 2
+  )
+
+  expect_equal(result[, "0-100"], 1 - crossing_100)
+  expect_equal(result[, "100-300"], crossing_100 - crossing_300)
+  expect_equal(result[, "below"], crossing_300)
+  expect_equal(rowSums(result), c(1, 1, 1), tolerance = 1e-12)
 })

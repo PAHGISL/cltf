@@ -4,7 +4,7 @@ Script: test_model_service.py
 Objective: Verify direct Python CLTF model orchestration for the workbench.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Synthetic prepared CLTF app inputs.
 Outputs: Pytest assertions for fitted run results.
 Usage: python -m pytest apps/herbicide_workbench/tests/test_model_service.py -q
@@ -57,12 +57,23 @@ def prepared_inputs() -> PreparedInputs:
             "source": ["test", "test", "test"],
         }
     )
+    soil_properties = pd.DataFrame(
+        {
+            "property": ["SOC", "Clay"],
+            "depth_top_mm": [0.0, 0.0],
+            "depth_bottom_mm": [300.0, 300.0],
+            "estimate": [1.0, 32.0],
+            "unit": ["%", "%"],
+            "source": ["test", "test"],
+        }
+    )
     return PreparedInputs(
         case=CaseSelection("NSW_Griffith", "Heavy", "Imazapic"),
         site=get_site("NSW_Griffith"),
         observations=observations,
         forcing=forcing,
         bulk_density=bulk_density,
+        soil_properties=soil_properties,
         application_date=application_date,
         application_rate_g_ha=220.0,
         top_bulk_density_g_cm3=1.47,
@@ -77,6 +88,8 @@ def test_fit_uses_replicate_log_objective() -> None:
     assert result.fit.objective < 1e6
     assert result.assessment.time_days == 90
     assert "transport_scales" in result.metadata
+    assert set(result.parameters) == {"mu", "sigma", "R", "k"}
+    assert "profile_simulation" in result.metadata
     assert {
         "date",
         "time_days",

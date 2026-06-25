@@ -4,7 +4,7 @@ Script: plots.py
 Objective: Wrap Python CLTF diagnostic plots for the Streamlit workbench.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: CLTF forcing, prediction, simulation, profile, and bulk-density tables.
 Outputs: Matplotlib Figure objects for app rendering.
 Usage: Import plotting helpers from workbench.plots.
@@ -17,6 +17,7 @@ from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
+from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -30,6 +31,10 @@ import cltf.plotting as cltf_plotting  # noqa: E402
 ASSESSMENT_LABEL = "Residue assessment"
 ASSESSMENT_COLOR = "#7A0177"
 _COLORS = ("#0072B2", "#D55E00", "#009E73", "#CC79A7")
+CONCENTRATION_CMAP = LinearSegmentedColormap.from_list(
+    "cltf_green_yellow_red",
+    ["#006837", "#FFFFBF", "#A50026"],
+)
 _ARIAL_REGISTERED = False
 
 
@@ -184,30 +189,42 @@ def plot_water_forcing(
     return figure
 
 
-def plot_cumulative_infiltration_histogram(
+def plot_cumulative_infiltration(
     forcing: pd.DataFrame,
+    assessment_day: int | float | None = None,
+    assessment_date: object | None = None,
 ) -> Figure:
-    """Plot the distribution of cumulative infiltration as a histogram."""
+    """Plot cumulative infiltration against time."""
 
     configure_matplotlib()
     _require_columns(forcing, ("cumulative_infiltration_mm",), "forcing")
+    x_values, x_label, x_is_date = _forcing_x_values(forcing)
     values = forcing["cumulative_infiltration_mm"].to_numpy(dtype=float)
-    values = values[np.isfinite(values)]
-    if values.size == 0:
+    if not np.any(np.isfinite(values)):
         raise ValueError("forcing contains no finite cumulative infiltration")
 
-    bin_count = min(30, max(6, int(np.sqrt(values.size))))
     figure, axis = plt.subplots(figsize=(8.5, 3.6), constrained_layout=True)
-    axis.hist(
+    axis.plot(
+        x_values,
         values,
-        bins=bin_count,
         color="#009E73",
-        alpha=0.78,
-        edgecolor="#ffffff",
+        linewidth=2,
     )
-    axis.set_xlabel("Cumulative infiltration (mm)")
-    axis.set_ylabel("Number of days")
+    axis.set_xlabel(x_label)
+    axis.set_ylabel("Cumulative infiltration (mm)")
+    if assessment_date is not None and x_is_date:
+        add_assessment_line(axis, assessment_date, x_is_date=True)
+    elif assessment_day is not None:
+        add_assessment_line(axis, assessment_day)
     return figure
+
+
+def plot_cumulative_infiltration_histogram(
+    forcing: pd.DataFrame,
+) -> Figure:
+    """Compatibility wrapper for the time-series cumulative infiltration plot."""
+
+    return plot_cumulative_infiltration(forcing)
 
 
 def plot_observed_fitted(
@@ -234,6 +251,7 @@ def _violin_values(values: np.ndarray) -> np.ndarray:
 
 def plot_observation_violin(
     predictions: pd.DataFrame,
+    simulation: pd.DataFrame | None = None,
     assessment_day: int | float | None = None,
 ) -> Figure:
     """Plot observation violins with jittered replicates and dashed fitted lines."""
@@ -336,6 +354,35 @@ def plot_observation_violin(
             label=f"{layer} fitted",
         )
 
+    if simulation is not None:
+        _require_columns(
+            simulation,
+            (
+                "time_days",
+                "concentration_top_ug_kg",
+                "concentration_bottom_ug_kg",
+            ),
+            "simulation",
+        )
+        ordered_simulation = simulation.sort_values("time_days")
+        simulation_columns = [
+            ("Top simulation", "concentration_top_ug_kg", _COLORS[0]),
+            ("Bottom simulation", "concentration_bottom_ug_kg", _COLORS[1]),
+        ]
+        for label, column, color in simulation_columns:
+            values = ordered_simulation[column].to_numpy(dtype=float)
+            keep = np.isfinite(values) & (values > 0)
+            if np.any(keep):
+                axis.plot(
+                    ordered_simulation["time_days"].to_numpy(dtype=float)[keep],
+                    values[keep],
+                    color=color,
+                    linestyle="-",
+                    linewidth=1.7,
+                    alpha=0.72,
+                    label=label,
+                )
+
     axis.set_yscale("log")
     axis.set_xlabel("Days since application")
     axis.set_ylabel("Resident concentration (\N{MICRO SIGN}g/kg)")
@@ -350,6 +397,23 @@ def plot_observation_violin(
                 label=f"{layer} fitted",
             )
             for layer in layer_order
+        ] + [
+            Line2D(
+                [0],
+                [0],
+                color=_COLORS[0],
+                linestyle="-",
+                linewidth=1.7,
+                label="Top simulation",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=_COLORS[1],
+                linestyle="-",
+                linewidth=1.7,
+                label="Bottom simulation",
+            ),
         ],
         frameon=False,
         fontsize=9,
@@ -368,55 +432,71 @@ def _time_edges(time_values: np.ndarray) -> np.ndarray:
     return np.concatenate(([first], midpoints, [last]))
 
 
+def _depth_edges(depth_values: np.ndarray) -> np.ndarray:
+    if depth_values.size == 1:
+        return np.array([max(0.0, depth_values[0] - 0.5), depth_values[0] + 0.5])
+    midpoints = (depth_values[:-1] + depth_values[1:]) / 2.0
+    first = max(0.0, depth_values[0] - (depth_values[1] - depth_values[0]) / 2.0)
+    last = depth_values[-1] + (depth_values[-1] - depth_values[-2]) / 2.0
+    return np.concatenate(([first], midpoints, [last]))
+
+
 def plot_simulation_heatmap(
     simulation: pd.DataFrame,
     top_depth_mm: float,
     bottom_depth_mm: float,
     assessment_day: int | float | None = None,
 ) -> Figure:
-    """Plot simulated top/bottom resident concentration as a depth heatmap."""
+    """Plot simulated resident concentration as a depth heatmap."""
 
     configure_matplotlib()
-    _require_columns(
-        simulation,
-        (
-            "time_days",
-            "concentration_top_ug_kg",
-            "concentration_bottom_ug_kg",
-        ),
-        "simulation",
-    )
-    ordered = simulation.sort_values("time_days")
-    time_values = ordered["time_days"].to_numpy(dtype=float)
-    concentration = np.vstack(
-        [
-            ordered["concentration_top_ug_kg"].to_numpy(dtype=float),
-            ordered["concentration_bottom_ug_kg"].to_numpy(dtype=float),
-        ]
-    )
+    if {"time_days", "depth_mm", "concentration_ug_kg"} <= set(simulation.columns):
+        ordered = simulation.sort_values(["depth_mm", "time_days"])
+        pivot = ordered.pivot_table(
+            index="depth_mm",
+            columns="time_days",
+            values="concentration_ug_kg",
+            aggfunc="mean",
+        ).sort_index().sort_index(axis=1)
+        time_values = pivot.columns.to_numpy(dtype=float)
+        depth_values = pivot.index.to_numpy(dtype=float)
+        concentration = pivot.to_numpy(dtype=float)
+        x_edges = _time_edges(time_values)
+        y_edges = _depth_edges(depth_values)
+    else:
+        _require_columns(
+            simulation,
+            (
+                "time_days",
+                "concentration_top_ug_kg",
+                "concentration_bottom_ug_kg",
+            ),
+            "simulation",
+        )
+        ordered = simulation.sort_values("time_days")
+        time_values = ordered["time_days"].to_numpy(dtype=float)
+        concentration = np.vstack(
+            [
+                ordered["concentration_top_ug_kg"].to_numpy(dtype=float),
+                ordered["concentration_bottom_ug_kg"].to_numpy(dtype=float),
+            ]
+        )
+        x_edges = _time_edges(time_values)
+        y_edges = np.array([0.0, float(top_depth_mm), float(bottom_depth_mm)])
     concentration[~np.isfinite(concentration)] = np.nan
-    x_edges = _time_edges(time_values)
-    y_edges = np.array([0.0, float(top_depth_mm), float(bottom_depth_mm)])
 
     figure, axis = plt.subplots(figsize=(8.5, 4.5), constrained_layout=True)
     mesh = axis.pcolormesh(
         x_edges,
         y_edges,
         concentration,
-        cmap="YlOrRd",
+        cmap=CONCENTRATION_CMAP,
         shading="flat",
     )
     axis.set_ylim(float(bottom_depth_mm), 0.0)
     axis.set_xlabel("Days since application")
     axis.set_ylabel("Soil depth (mm)")
-    axis.set_yticks([
-        float(top_depth_mm) / 2.0,
-        (float(top_depth_mm) + float(bottom_depth_mm)) / 2.0,
-    ])
-    axis.set_yticklabels([
-        f"0\N{EN DASH}{float(top_depth_mm):g}",
-        f"{float(top_depth_mm):g}\N{EN DASH}{float(bottom_depth_mm):g}",
-    ])
+    axis.axhline(float(top_depth_mm), color="#404040", linestyle=":", linewidth=1)
     if assessment_day is not None:
         add_assessment_line(axis, assessment_day)
     colorbar = figure.colorbar(
@@ -427,6 +507,40 @@ def plot_simulation_heatmap(
         fraction=0.08,
     )
     colorbar.set_label("Resident concentration (\N{MICRO SIGN}g/kg)")
+    return figure
+
+
+def plot_profile_curve(
+    profile_simulation: pd.DataFrame,
+    assessment_day: int | float,
+    bottom_depth_mm: float,
+) -> Figure:
+    """Plot a single continuous concentration-depth profile."""
+
+    configure_matplotlib()
+    _require_columns(
+        profile_simulation,
+        ("time_days", "depth_mm", "concentration_ug_kg"),
+        "profile_simulation",
+    )
+    day = float(assessment_day)
+    available = np.sort(profile_simulation["time_days"].unique().astype(float))
+    selected_day = available[np.argmin(np.abs(available - day))]
+    selected = profile_simulation.loc[
+        profile_simulation["time_days"].astype(float).eq(float(selected_day))
+    ].sort_values("depth_mm")
+
+    figure, axis = plt.subplots(figsize=(8.5, 4.5), constrained_layout=True)
+    axis.plot(
+        selected["concentration_ug_kg"],
+        selected["depth_mm"],
+        color="#006837",
+        linewidth=2.2,
+    )
+    axis.set_ylim(float(bottom_depth_mm), 0.0)
+    axis.set_xlabel("Resident concentration (\N{MICRO SIGN}g/kg)")
+    axis.set_ylabel("Soil depth (mm)")
+    axis.set_title(f"CLTF profile at {selected_day:g} days")
     return figure
 
 
@@ -471,3 +585,57 @@ def plot_bulk_density(bulk_density: pd.DataFrame) -> Figure:
 
     configure_matplotlib()
     return cltf_plotting.plot_bulk_density(bulk_density)
+
+
+def plot_soil_properties(soil_properties: pd.DataFrame) -> Figure:
+    """Plot provisional SOC and clay demo properties by depth."""
+
+    configure_matplotlib()
+    _require_columns(
+        soil_properties,
+        (
+            "property",
+            "depth_top_mm",
+            "depth_bottom_mm",
+            "estimate",
+            "unit",
+        ),
+        "soil_properties",
+    )
+    properties = list(dict.fromkeys(soil_properties["property"].astype(str)))
+    figure, axes = plt.subplots(
+        1,
+        len(properties),
+        figsize=(8.5, 3.8),
+        constrained_layout=True,
+        squeeze=False,
+    )
+    for axis, property_name in zip(axes[0], properties):
+        selected = soil_properties.loc[
+            soil_properties["property"].astype(str).eq(property_name)
+        ].sort_values("depth_top_mm")
+        centers = (
+            selected["depth_top_mm"].to_numpy(dtype=float)
+            + selected["depth_bottom_mm"].to_numpy(dtype=float)
+        ) / 2.0
+        heights = (
+            selected["depth_bottom_mm"].to_numpy(dtype=float)
+            - selected["depth_top_mm"].to_numpy(dtype=float)
+        )
+        axis.barh(
+            centers,
+            selected["estimate"].to_numpy(dtype=float),
+            height=heights,
+            color="#56B4E9" if property_name == "SOC" else "#E69F00",
+            alpha=0.78,
+            edgecolor="#ffffff",
+        )
+        unit = selected["unit"].iloc[0]
+        axis.set_title(property_name)
+        axis.set_xlabel(f"{property_name} ({unit})")
+        axis.set_ylim(
+            soil_properties["depth_bottom_mm"].max(),
+            soil_properties["depth_top_mm"].min(),
+        )
+        axis.set_ylabel("Soil depth (mm)")
+    return figure

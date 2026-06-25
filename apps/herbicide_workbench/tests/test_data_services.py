@@ -4,7 +4,7 @@ Script: test_data_services.py
 Objective: Verify cache-first climate and soil preparation for the CLTF app.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Shared example SILO and SLGA cache files.
 Outputs: Pytest assertions for external CLTF inputs.
 Usage: python -m pytest apps/herbicide_workbench/tests/test_data_services.py -q
@@ -25,8 +25,10 @@ def test_showcase_uses_committed_cache_without_credentials() -> None:
 
     assert len(result.forcing) == 147
     assert len(result.bulk_density) == 3
+    assert {"SOC", "Clay"} <= set(result.soil_properties["property"])
     assert result.metadata["climate_source"] == "committed_cache"
     assert result.metadata["soil_source"] == "committed_cache"
+    assert result.metadata["soil_properties_source"] == "demo_provisional"
     assert result.forcing["daily_infiltration_mm"].ge(0).all()
     assert result.forcing["cumulative_infiltration_mm"].is_monotonic_increasing
     assert result.top_bulk_density_g_cm3 > 0

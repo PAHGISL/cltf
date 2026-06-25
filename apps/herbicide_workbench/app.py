@@ -4,7 +4,7 @@ Script: app.py
 Objective: Launch a Streamlit CLTF workbench for herbicide residue assessment.
 Author: Yi Yu
 Created: 2026-05-07
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Observation CSV uploads, shared site registry, cached/API climate, and cached/API soil.
 Outputs: Interactive maps, CLTF diagnostics, assessment summaries, and downloads.
 Usage: streamlit run apps/herbicide_workbench/app.py
@@ -41,9 +41,11 @@ from workbench.model_service import (
 )
 from workbench.plots import (
     plot_bulk_density,
-    plot_cumulative_infiltration_histogram,
+    plot_cumulative_infiltration,
     plot_observation_violin,
+    plot_profile_curve,
     plot_simulation_heatmap,
+    plot_soil_properties,
     plot_water_forcing,
 )
 from workbench.site_registry import (
@@ -119,6 +121,7 @@ def _prepared_inputs(
         observations=observations,
         forcing=external_inputs.forcing,
         bulk_density=external_inputs.bulk_density,
+        soil_properties=external_inputs.soil_properties,
         application_date=application_date,
         application_rate_g_ha=application_rate_g_ha,
         top_bulk_density_g_cm3=top_bulk_density_g_cm3,
@@ -243,7 +246,16 @@ def main() -> None:
     st.subheader("Residue assessment")
     preset = st.selectbox(
         "Assessment preset",
-        ["90 days beyond application", "60 days beyond application", "120 days beyond application", "Custom"],
+        [
+            "30 days beyond application",
+            "60 days beyond application",
+            "90 days beyond application",
+            "180 days beyond application",
+            "270 days beyond application",
+            "360 days beyond application",
+            "Custom",
+        ],
+        index=2,
     )
     preset_date = _assessment_from_preset(
         preset,
@@ -312,6 +324,8 @@ def main() -> None:
         st.dataframe(external_inputs.forcing, width="stretch")
         st.subheader("Bulk density")
         st.dataframe(external_inputs.bulk_density, width="stretch")
+        st.subheader("SOC and clay demo")
+        st.dataframe(external_inputs.soil_properties, width="stretch")
 
     st.subheader("Cached forcing and soil diagnostics")
     st.pyplot(
@@ -323,10 +337,18 @@ def main() -> None:
         clear_figure=True,
     )
     st.pyplot(
-        plot_cumulative_infiltration_histogram(external_inputs.forcing),
+        plot_cumulative_infiltration(
+            external_inputs.forcing,
+            assessment_day=assessment_day,
+            assessment_date=assessment_date,
+        ),
         clear_figure=True,
     )
     st.pyplot(plot_bulk_density(external_inputs.bulk_density), clear_figure=True)
+    st.pyplot(
+        plot_soil_properties(external_inputs.soil_properties),
+        clear_figure=True,
+    )
 
     run_clicked = st.button("Run CLTF fit and assessment", type="primary")
     if not run_clicked:
@@ -396,15 +418,27 @@ def main() -> None:
 
     st.subheader("CLTF diagnostic plots")
     st.pyplot(
-        plot_observation_violin(result.fit.predictions, assessment_day=assessment_day),
+        plot_observation_violin(
+            result.fit.predictions,
+            simulation=result.predictions,
+            assessment_day=assessment_day,
+        ),
         clear_figure=True,
     )
     st.pyplot(
         plot_simulation_heatmap(
-            result.predictions,
+            result.metadata["profile_simulation"],
             top_depth_mm=float(site["top_depth_mm"]),
             bottom_depth_mm=float(site["bottom_depth_mm"]),
             assessment_day=assessment_day,
+        ),
+        clear_figure=True,
+    )
+    st.pyplot(
+        plot_profile_curve(
+            result.metadata["profile_simulation"],
+            assessment_day=assessment_day,
+            bottom_depth_mm=float(site["bottom_depth_mm"]),
         ),
         clear_figure=True,
     )

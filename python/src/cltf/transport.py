@@ -4,7 +4,7 @@ Script: transport.py
 Objective: Implement validated single- and two-layer CLTF transport calculations.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Layer parameters and cumulative infiltration values.
 Outputs: Transfer densities, cumulative probabilities, and layer mass fractions.
 Usage: Import public functions from cltf or cltf.transport.
@@ -57,6 +57,13 @@ def _non_negative_array(values: ArrayLike, name: str) -> np.ndarray:
     return result
 
 
+def _positive_parameter(value: float, name: str) -> float:
+    result = float(value)
+    if not math.isfinite(result) or result <= 0:
+        raise ValueError(f"{name} must be finite and positive")
+    return result
+
+
 def cltf_pdf(y_mm: ArrayLike, layer: CLTFLayer) -> np.ndarray:
     """Evaluate a single-layer CLTF density."""
 
@@ -69,6 +76,105 @@ def cltf_cdf(y_mm: ArrayLike, layer: CLTFLayer) -> np.ndarray:
 
     y = _non_negative_array(y_mm, "y_mm")
     return lognorm.cdf(y, s=layer.sigma, scale=layer.scale_mm)
+
+
+def cltf_depth_cdf(
+    y_mm: ArrayLike,
+    depth_mm: ArrayLike,
+    mu: float,
+    sigma: float,
+    retardation: float,
+) -> np.ndarray:
+    """Evaluate the continuous one-layer crossing CDF at depth."""
+
+    y = _non_negative_array(y_mm, "y_mm")
+    depth = np.atleast_1d(np.asarray(depth_mm, dtype=float))
+    scalar_depth = depth.ndim == 1 and depth.size == 1
+    if (
+        depth.ndim != 1
+        or not np.all(np.isfinite(depth))
+        or np.any(depth < 0)
+    ):
+        raise ValueError("depth_mm must contain finite non-negative values")
+    mu = _positive_parameter(mu, "mu")
+    sigma = _positive_parameter(sigma, "sigma")
+    retardation = _positive_parameter(retardation, "retardation")
+
+    result = np.empty((y.size, depth.size), dtype=float)
+    zero_depth = depth == 0
+    if np.any(zero_depth):
+        result[:, zero_depth] = 1.0
+    if np.any(~zero_depth):
+        scale = mu * retardation * depth[~zero_depth]
+        result[:, ~zero_depth] = lognorm.cdf(
+            y[:, np.newaxis],
+            s=sigma,
+            scale=scale[np.newaxis, :],
+        )
+    result = np.clip(result, 0.0, 1.0)
+    return result[:, 0] if scalar_depth else result
+
+
+def _interval_array(intervals_mm: ArrayLike) -> np.ndarray:
+    intervals = np.asarray(intervals_mm, dtype=float)
+    if intervals.ndim != 2 or intervals.shape[1] != 2:
+        raise ValueError("intervals_mm must be a two-column array")
+    if (
+        not np.all(np.isfinite(intervals))
+        or np.any(intervals[:, 0] < 0)
+        or np.any(intervals[:, 1] <= intervals[:, 0])
+    ):
+        raise ValueError("Depth intervals must be finite, non-negative, and positive")
+    order = np.argsort(intervals[:, 0], kind="stable")
+    return intervals[order, :]
+
+
+def cltf_interval_probabilities(
+    y_mm: ArrayLike,
+    intervals_mm: ArrayLike,
+    mu: float,
+    sigma: float,
+    retardation: float,
+    tolerance: float = 1e-10,
+) -> np.ndarray:
+    """Calculate continuous one-layer resident fractions by depth interval."""
+
+    y = _non_negative_array(y_mm, "y_mm")
+    intervals = _interval_array(intervals_mm)
+    upper_crossing = cltf_depth_cdf(
+        y,
+        intervals[:, 0],
+        mu,
+        sigma,
+        retardation,
+    )
+    lower_crossing = cltf_depth_cdf(
+        y,
+        intervals[:, 1],
+        mu,
+        sigma,
+        retardation,
+    )
+    interval_mass = upper_crossing - lower_crossing
+    below = cltf_depth_cdf(
+        y,
+        intervals[:, 1].max(),
+        mu,
+        sigma,
+        retardation,
+    )[:, np.newaxis]
+    result = np.column_stack((interval_mass, below))
+    if np.any(result < -tolerance) or np.any(result > 1.0 + tolerance):
+        raise ValueError("Interval probabilities violate numerical bounds")
+    result[(result < 0) & (result >= -tolerance)] = 0.0
+    row_sums = result.sum(axis=1)
+    contiguous_from_surface = (
+        abs(intervals[0, 0]) <= tolerance
+        and np.all(np.abs(intervals[1:, 0] - intervals[:-1, 1]) <= tolerance)
+    )
+    if contiguous_from_surface and np.any(np.abs(row_sums - 1.0) > tolerance):
+        raise ValueError("Interval probabilities violate numerical mass balance")
+    return result
 
 
 def _two_layer_cdf_scalar(

@@ -4,7 +4,7 @@ Script: model_service.py
 Objective: Orchestrate direct Python CLTF fitting and simulation for the app.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: PreparedInputs, optional parameter settings, and optional assessment dates.
 Outputs: RunResult objects with fitted parameters, predictions, diagnostics, and metadata.
 Usage: Import fit_case and default_parameters from workbench.model_service.
@@ -26,15 +26,15 @@ from workbench.contracts import PreparedInputs, RunResult
 
 ensure_cltf_path()
 from cltf import (  # noqa: E402
-    CLTFLayer,
-    fit_cltf,
+    fit_cltf_profile,
     infer_application_rate_g_ha,
-    profile_cltf_parameter,
-    simulate_cltf,
+    profile_cltf_profile_parameter,
+    simulate_cltf_intervals,
+    simulate_cltf_profile,
 )
 
 
-PARAMETER_NAMES = ("mu", "sigma", "R_top", "R_bottom", "k")
+PARAMETER_NAMES = ("mu", "sigma", "R", "k")
 
 
 @dataclass(frozen=True)
@@ -60,35 +60,11 @@ def reference_starts() -> pd.DataFrame:
 
     return pd.DataFrame(
         [
-            [1.0, 0.6, 2.0, 3.0, 0.005],
-            [
-                7.32270804579603,
-                1.64018924534321,
-                13.1741465789964,
-                28.046700189868,
-                0.0489113214192912,
-            ],
-            [
-                7.499749535718,
-                1.34583027791232,
-                14.1307892023353,
-                7.73732184779365,
-                0.00587436808273196,
-            ],
-            [
-                2.32480930155143,
-                1.86781195513904,
-                9.20906134734396,
-                13.9225553940516,
-                0.0237498540780507,
-            ],
-            [
-                6.65205862723524,
-                0.423199833370745,
-                14.4103338078829,
-                28.20643423039,
-                0.0280166373122483,
-            ],
+            [1.0, 0.6, 2.0, 0.005],
+            [3.0, 1.1, 8.0, 0.02],
+            [0.6, 0.4, 12.0, 0.004],
+            [5.0, 1.6, 3.5, 0.03],
+            [1.8, 0.9, 18.0, 0.01],
         ],
         columns=PARAMETER_NAMES,
     )
@@ -101,22 +77,19 @@ def default_parameters(**overrides: Any) -> ModelSettings:
         lower={
             "mu": 0.05,
             "sigma": 0.10,
-            "R_top": 0.10,
-            "R_bottom": 0.10,
+            "R": 0.10,
             "k": 0.0,
         },
         upper={
             "mu": 8.0,
             "sigma": 2.50,
-            "R_top": 20.0,
-            "R_bottom": 30.0,
+            "R": 30.0,
             "k": 0.05,
         },
         initial={
             "mu": 1.0,
             "sigma": 0.6,
-            "R_top": 2.0,
-            "R_bottom": 3.0,
+            "R": 2.0,
             "k": 0.005,
         },
         starts=reference_starts(),
@@ -190,7 +163,7 @@ def build_objective_profiles(fit: Any, settings: ModelSettings) -> pd.DataFrame:
     """Build compact one-parameter objective profiles for diagnostics."""
 
     profiles = [
-        profile_cltf_parameter(
+        profile_cltf_profile_parameter(
             fit,
             parameter=parameter,
             grid=_profile_grid(fit, parameter, settings.profile_points),
@@ -206,37 +179,105 @@ def _simulate_full_period(
     settings: ModelSettings,
     parameters: Mapping[str, float],
     application_rate_g_ha: float,
-    top_thickness_mm: float,
-    bottom_thickness_mm: float,
+    top_depth_mm: float,
+    bottom_depth_mm: float,
 ) -> pd.DataFrame:
-    simulation = simulate_cltf(
+    intervals = pd.DataFrame(
+        {
+            "depth_top_mm": [0.0, top_depth_mm],
+            "depth_bottom_mm": [top_depth_mm, bottom_depth_mm],
+        }
+    )
+    long = simulate_cltf_intervals(
         time_days=prepared.forcing["time_days"],
         cumulative_infiltration_mm=prepared.forcing[
             "cumulative_infiltration_mm"
         ],
-        top_layer=CLTFLayer(
-            parameters["mu"],
-            parameters["sigma"],
-            parameters["R_top"],
-            top_thickness_mm,
-        ),
-        bottom_layer=CLTFLayer(
-            parameters["mu"],
-            parameters["sigma"],
-            parameters["R_bottom"],
-            bottom_thickness_mm,
-        ),
+        intervals_mm=intervals,
+        mu=parameters["mu"],
+        sigma=parameters["sigma"],
+        retardation=parameters["R"],
         decay_rate_day=parameters["k"],
         application_rate_g_ha=application_rate_g_ha,
-        top_bulk_density_g_cm3=prepared.top_bulk_density_g_cm3,
-        bottom_bulk_density_g_cm3=prepared.bottom_bulk_density_g_cm3,
+        bulk_density_g_cm3=[
+            prepared.top_bulk_density_g_cm3,
+            prepared.bottom_bulk_density_g_cm3,
+        ],
         effective_porosity=settings.effective_porosity,
-        method=settings.method,
-        n_steps=settings.n_steps,
-        rel_tol=settings.rel_tol,
     )
+    top_rows = long.loc[
+        long["depth_top_mm"].eq(0.0)
+        & long["depth_bottom_mm"].eq(top_depth_mm)
+    ].set_index("time_days")
+    bottom_rows = long.loc[
+        long["depth_top_mm"].eq(top_depth_mm)
+        & long["depth_bottom_mm"].eq(bottom_depth_mm)
+    ].set_index("time_days")
+    result = prepared.forcing.loc[
+        :,
+        ["date", "time_days", "cumulative_infiltration_mm"],
+    ].copy()
+    result["mass_top"] = top_rows.loc[
+        result["time_days"],
+        "mass_fraction",
+    ].to_numpy()
+    result["mass_bottom"] = bottom_rows.loc[
+        result["time_days"],
+        "mass_fraction",
+    ].to_numpy()
+    result["mass_below"] = top_rows.loc[
+        result["time_days"],
+        "mass_below_profile",
+    ].to_numpy()
+    result["mass_degraded"] = top_rows.loc[
+        result["time_days"],
+        "mass_degraded",
+    ].to_numpy()
+    result["concentration_top_ug_kg"] = top_rows.loc[
+        result["time_days"],
+        "concentration_ug_kg",
+    ].to_numpy()
+    result["concentration_bottom_ug_kg"] = bottom_rows.loc[
+        result["time_days"],
+        "concentration_ug_kg",
+    ].to_numpy()
+    return result
+
+
+def _simulate_profile_period(
+    prepared: PreparedInputs,
+    settings: ModelSettings,
+    parameters: Mapping[str, float],
+    application_rate_g_ha: float,
+    top_depth_mm: float,
+    bottom_depth_mm: float,
+) -> pd.DataFrame:
+    depths = np.linspace(0.0, bottom_depth_mm, 61)
+    density = np.where(
+        depths <= top_depth_mm,
+        prepared.top_bulk_density_g_cm3,
+        prepared.bottom_bulk_density_g_cm3,
+    )
+    profile = simulate_cltf_profile(
+        time_days=prepared.forcing["time_days"],
+        cumulative_infiltration_mm=prepared.forcing[
+            "cumulative_infiltration_mm"
+        ],
+        depths_mm=depths,
+        mu=parameters["mu"],
+        sigma=parameters["sigma"],
+        retardation=parameters["R"],
+        decay_rate_day=parameters["k"],
+        application_rate_g_ha=application_rate_g_ha,
+        bulk_density_g_cm3=density,
+        effective_porosity=settings.effective_porosity,
+    )
+    dates = prepared.forcing.set_index("time_days")["date"]
     return pd.concat(
-        [prepared.forcing.loc[:, ["date"]].reset_index(drop=True), simulation],
+        [
+            profile["time_days"].map(dates).rename("date"),
+            profile,
+        ],
         axis=1,
     )
 
@@ -251,31 +292,24 @@ def fit_case(
 
     resolved = settings or default_parameters()
     top_depth, bottom_depth = _layer_depths(prepared)
-    bottom_thickness = bottom_depth - top_depth
     application_rate = (
         float(application_rate_g_ha)
         if application_rate_g_ha is not None
         else float(prepared.application_rate_g_ha)
     )
     calibration_observations = _calibration_observations(prepared.observations)
-    fit = fit_cltf(
+    fit = fit_cltf_profile(
         observations=calibration_observations,
         forcing=prepared.forcing,
         application_rate_g_ha=application_rate,
-        top_bulk_density_g_cm3=prepared.top_bulk_density_g_cm3,
-        bottom_bulk_density_g_cm3=prepared.bottom_bulk_density_g_cm3,
+        bulk_density=prepared.bulk_density,
         lower=resolved.lower,
         upper=resolved.upper,
         initial=resolved.initial,
         starts=resolved.starts,
         n_starts=resolved.n_starts,
         seed=resolved.seed,
-        top_thickness_mm=top_depth,
-        bottom_thickness_mm=bottom_thickness,
         effective_porosity=resolved.effective_porosity,
-        method=resolved.method,
-        n_steps=resolved.n_steps,
-        rel_tol=resolved.rel_tol,
         penalty=resolved.penalty,
         control=resolved.control,
     )
@@ -285,7 +319,15 @@ def fit_case(
         fit.parameters,
         application_rate,
         top_depth,
-        bottom_thickness,
+        bottom_depth,
+    )
+    profile_simulation = _simulate_profile_period(
+        prepared,
+        resolved,
+        fit.parameters,
+        application_rate,
+        top_depth,
+        bottom_depth,
     )
     resolved_assessment_date = (
         pd.Timestamp(assessment_date).normalize()
@@ -306,15 +348,16 @@ def fit_case(
         ),
         "effective_porosity": resolved.effective_porosity,
         "top_thickness_mm": top_depth,
-        "bottom_thickness_mm": bottom_thickness,
-        "convolution_method": resolved.method,
-        "convolution_steps": resolved.n_steps,
+        "bottom_thickness_mm": bottom_depth - top_depth,
+        "convolution_method": "continuous_profile",
+        "convolution_steps": None,
         "objective": fit.objective,
         "convergence": fit.convergence,
         "message": fit.message,
         "transport_scales": fit.transport_scales,
         "identifiability_note": fit.identifiability_note,
         "objective_profiles": objective_profiles,
+        "profile_simulation": profile_simulation,
     }
     return RunResult(
         parameters=fit.parameters,

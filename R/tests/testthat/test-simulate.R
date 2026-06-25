@@ -3,7 +3,7 @@
 # Objective: Verify end-to-end time-series CLTF simulation and limiting cases.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-24
+# Last updated: 2026-06-25
 # Inputs: cltf simulator and fixed model inputs.
 # Outputs: Testthat assertions.
 # Usage: Loaded by testthat::test_local("R", filter = "simulate").
@@ -47,4 +47,31 @@ test_that("simulation rejects decreasing forcing", {
     ),
     "non-decreasing"
   )
+})
+
+test_that("one-layer interval simulation accepts arbitrary depths", {
+  intervals <- data.frame(
+    depth_top_mm       = c(0, 50, 150),
+    depth_bottom_mm    = c(50, 150, 300),
+    bulk_density_g_cm3 = c(1.3, 1.35, 1.4)
+  )
+
+  result <- simulate_cltf_intervals(
+    time_days                   = c(0, 60),
+    cumulative_infiltration_mm = c(0, 400),
+    intervals                  = intervals[c("depth_top_mm", "depth_bottom_mm")],
+    mu                         = 1,
+    sigma                      = 0.5,
+    retardation                = 2,
+    decay_rate_day             = 0.001,
+    application_rate_g_ha      = 30,
+    bulk_density_g_cm3         = intervals$bulk_density_g_cm3
+  )
+
+  expect_equal(nrow(result), 6)
+  expect_equal(result$depth_top_mm, rep(c(0, 50, 150), 2))
+  expect_true(all(result$concentration_ug_kg >= 0))
+  grouped <- stats::aggregate(mass_fraction ~ time_days, result, sum)
+  expect_equal(grouped$mass_fraction[grouped$time_days == 0], 1)
+  expect_lt(grouped$mass_fraction[grouped$time_days == 60], 1)
 })

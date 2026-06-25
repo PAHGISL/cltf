@@ -4,7 +4,7 @@ Script: test_validation.py
 Objective: Verify resident-concentration observation CSV validation.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Uploaded observation-like pandas data frames.
 Outputs: Pytest assertions for prepared CLTF observation tables.
 Usage: python -m pytest apps/herbicide_workbench/tests/test_validation.py -q
@@ -87,19 +87,21 @@ def test_detection_limit_substitution_is_preserved() -> None:
     assert prepared.loc[1, "used_for_calibration"]
 
 
-def test_sampling_intervals_must_match_selected_site() -> None:
+def test_sampling_intervals_can_be_arbitrary_within_selected_profile() -> None:
     raw = pd.DataFrame(
         {
-            "sample_date": ["2024-04-26"],
-            "depth_top_mm": [0],
-            "depth_bottom_mm": [100],
-            "concentration_ug_kg": [10.9],
-            "is_t0": [True],
+            "sample_date": ["2024-04-26", "2024-06-25"],
+            "depth_top_mm": [0, 50],
+            "depth_bottom_mm": [100, 150],
+            "concentration_ug_kg": [10.9, 2.4],
+            "is_t0": [True, False],
         }
     )
 
-    with pytest.raises(ValidationError, match="interval"):
-        prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
+    prepared = prepare_uploaded_observations(raw, get_site("NSW_Griffith"))
+
+    assert prepared["depth_bottom_mm"].tolist() == [100, 150]
+    assert prepared["used_for_calibration"].tolist() == [False, True]
 
 
 def test_list_cases_returns_uploaded_or_default_case() -> None:

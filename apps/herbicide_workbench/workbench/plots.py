@@ -441,6 +441,22 @@ def _depth_edges(depth_values: np.ndarray) -> np.ndarray:
     return np.concatenate(([first], midpoints, [last]))
 
 
+def _numeric_series(values: pd.Series | pd.Index) -> np.ndarray:
+    return pd.to_numeric(values, errors="coerce").to_numpy(
+        dtype=float,
+        na_value=np.nan,
+    )
+
+
+def _numeric_matrix(values: pd.DataFrame | np.ndarray) -> np.ndarray:
+    if isinstance(values, pd.DataFrame):
+        numeric = values.apply(pd.to_numeric, errors="coerce")
+        result = numeric.to_numpy(dtype=float, na_value=np.nan)
+    else:
+        result = np.asarray(values, dtype=float)
+    return np.where(np.isfinite(result), result, np.nan)
+
+
 def plot_simulation_heatmap(
     simulation: pd.DataFrame,
     top_depth_mm: float,
@@ -458,9 +474,9 @@ def plot_simulation_heatmap(
             values="concentration_ug_kg",
             aggfunc="mean",
         ).sort_index().sort_index(axis=1)
-        time_values = pivot.columns.to_numpy(dtype=float)
-        depth_values = pivot.index.to_numpy(dtype=float)
-        concentration = pivot.to_numpy(dtype=float)
+        time_values = _numeric_series(pivot.columns)
+        depth_values = _numeric_series(pivot.index)
+        concentration = _numeric_matrix(pivot)
         x_edges = _time_edges(time_values)
         y_edges = _depth_edges(depth_values)
     else:
@@ -474,16 +490,16 @@ def plot_simulation_heatmap(
             "simulation",
         )
         ordered = simulation.sort_values("time_days")
-        time_values = ordered["time_days"].to_numpy(dtype=float)
+        time_values = _numeric_series(ordered["time_days"])
         concentration = np.vstack(
             [
-                ordered["concentration_top_ug_kg"].to_numpy(dtype=float),
-                ordered["concentration_bottom_ug_kg"].to_numpy(dtype=float),
+                _numeric_series(ordered["concentration_top_ug_kg"]),
+                _numeric_series(ordered["concentration_bottom_ug_kg"]),
             ]
         )
         x_edges = _time_edges(time_values)
         y_edges = np.array([0.0, float(top_depth_mm), float(bottom_depth_mm)])
-    concentration[~np.isfinite(concentration)] = np.nan
+    concentration = _numeric_matrix(concentration)
 
     figure, axis = plt.subplots(figsize=(8.5, 4.5), constrained_layout=True)
     mesh = axis.pcolormesh(

@@ -179,6 +179,28 @@ def test_simulation_heatmap_uses_green_yellow_red_pcolormesh() -> None:
     assert cmap(0.0)[:3] == (0.0, 0.40784313725490196, 0.21568627450980393)
 
 
+def test_simulation_heatmap_handles_nullable_profile_concentrations() -> None:
+    simulation = pd.DataFrame(
+        {
+            "time_days": [0, 30, 0, 30],
+            "depth_mm": [0.0, 0.0, 150.0, 150.0],
+            "concentration_ug_kg": pd.Series([10.0, pd.NA, 0.5, 1.0], dtype="Float64"),
+        }
+    )
+
+    figure = plot_simulation_heatmap(
+        simulation,
+        top_depth_mm=150,
+        bottom_depth_mm=300,
+        assessment_day=30,
+    )
+
+    assert any(
+        isinstance(collection, QuadMesh)
+        for collection in figure.axes[0].collections
+    )
+
+
 def test_profile_curve_renders_one_assessment_day() -> None:
     figure = plot_profile_curve(
         _profile_simulation(),

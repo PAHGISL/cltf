@@ -4,7 +4,7 @@ Script: test_contracts.py
 Objective: Verify CLTF workbench data contracts and package-path configuration.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Workbench contract and configuration modules.
 Outputs: Pytest assertions.
 Usage: python -m pytest apps/herbicide_workbench/tests/test_contracts.py -q
@@ -61,6 +61,7 @@ def test_run_contracts_hold_prepared_inputs_and_assessment() -> None:
     external = ExternalInputs(
         forcing=forcing,
         bulk_density=bulk_density,
+        soil_properties=pd.DataFrame({"property": ["SOC"]}),
         top_bulk_density_g_cm3=1.47,
         bottom_bulk_density_g_cm3=1.52,
         warnings=[],
@@ -72,6 +73,7 @@ def test_run_contracts_hold_prepared_inputs_and_assessment() -> None:
         observations=observations,
         forcing=external.forcing,
         bulk_density=external.bulk_density,
+        soil_properties=external.soil_properties,
         application_date=pd.Timestamp("2024-04-26"),
         application_rate_g_ha=24.0,
         top_bulk_density_g_cm3=external.top_bulk_density_g_cm3,

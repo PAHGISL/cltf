@@ -3,7 +3,7 @@
 # Objective: Verify replicate-level log-space CLTF calibration and profiles.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-24
+# Last updated: 2026-06-25
 # Inputs: Deterministic synthetic forcing and concentration observations.
 # Outputs: Testthat assertions.
 # Usage: Loaded by testthat::test_local("R", filter = "calibration").
@@ -184,4 +184,59 @@ test_that("CLTF layers and fits use CLTF classes", {
     control                    = list(maxit = 10)
   )
   expect_s3_class(fit, "cltf_fit")
+})
+
+test_that("profile calibration uses arbitrary observation intervals", {
+  truth <- c(mu = 1, sigma = 0.45, R = 2, k = 0.004)
+  forcing <- data.frame(
+    time_days                  = c(0, 30, 60, 90),
+    cumulative_infiltration_mm = c(0, 120, 300, 520)
+  )
+  intervals <- data.frame(
+    depth_top_mm       = c(0, 50, 150),
+    depth_bottom_mm    = c(50, 150, 300),
+    bulk_density_g_cm3 = c(1.3, 1.35, 1.4)
+  )
+  simulation <- simulate_cltf_intervals(
+    time_days                   = forcing$time_days,
+    cumulative_infiltration_mm = forcing$cumulative_infiltration_mm,
+    intervals                  = intervals[c("depth_top_mm", "depth_bottom_mm")],
+    mu                         = truth["mu"],
+    sigma                      = truth["sigma"],
+    retardation                = truth["R"],
+    decay_rate_day             = truth["k"],
+    application_rate_g_ha      = 30,
+    bulk_density_g_cm3         = intervals$bulk_density_g_cm3
+  )
+  observations <- simulation[
+    simulation$time_days %in% c(30, 60, 90),
+    c("time_days", "depth_top_mm", "depth_bottom_mm", "concentration_ug_kg")
+  ]
+  names(observations)[names(observations) == "time_days"] <-
+    "days_since_application"
+  names(observations)[names(observations) == "concentration_ug_kg"] <-
+    "analysis_concentration_ug_kg"
+  set.seed(7)
+  observations$analysis_concentration_ug_kg <-
+    observations$analysis_concentration_ug_kg *
+    exp(stats::rnorm(nrow(observations), sd = 0.02))
+
+  fit <- fit_cltf_profile(
+    observations          = observations,
+    forcing               = forcing,
+    application_rate_g_ha = 30,
+    bulk_density          = intervals,
+    lower                 = c(mu = 0.2, sigma = 0.2, R = 0.5, k = 0),
+    upper                 = c(mu = 3, sigma = 1.2, R = 6, k = 0.02),
+    initial               = c(mu = 0.5, sigma = 0.8, R = 4, k = 0.01),
+    n_starts              = 2,
+    seed                  = 77,
+    control               = list(maxit = 60)
+  )
+
+  expect_lt(fit$objective, 0.15)
+  expect_named(fit$parameters, c("mu", "sigma", "R", "k"))
+  expect_named(fit$bound_hit, c("mu", "sigma", "R", "k"))
+  expect_equal(nrow(fit$predictions), nrow(observations))
+  expect_match(fit$identifiability_note, "mu \\* R")
 })

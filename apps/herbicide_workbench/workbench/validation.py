@@ -4,7 +4,7 @@ Script: validation.py
 Objective: Validate uploaded resident-concentration observation CSVs.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Observation CSV data frames and selected shared site records.
 Outputs: Prepared replicate-level CLTF observation tables.
 Usage: Call prepare_uploaded_observations() before CLTF app runs.
@@ -114,19 +114,16 @@ def _infer_application_date(result: pd.DataFrame) -> pd.Timestamp:
 
 
 def _validate_intervals(result: pd.DataFrame, site: dict[str, object]) -> None:
-    top_depth = float(site["top_depth_mm"])
     bottom_depth = float(site["bottom_depth_mm"])
-    top_interval = result["depth_top_mm"].eq(0) & result["depth_bottom_mm"].eq(
-        top_depth
+    invalid = (
+        result["depth_top_mm"].lt(0)
+        | result["depth_bottom_mm"].le(result["depth_top_mm"])
+        | result["depth_bottom_mm"].gt(bottom_depth)
     )
-    bottom_interval = result["depth_top_mm"].eq(top_depth) & result[
-        "depth_bottom_mm"
-    ].eq(bottom_depth)
-    invalid = ~(top_interval | bottom_interval)
     if invalid.any():
         raise ValidationError(
-            "Observation depth interval must match the selected site's "
-            f"0-{top_depth:g} mm or {top_depth:g}-{bottom_depth:g} mm layers."
+            "Observation depth intervals must be positive and fall within "
+            f"the selected site's 0-{bottom_depth:g} mm profile."
         )
 
 

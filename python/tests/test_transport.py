@@ -4,7 +4,7 @@ Script: test_transport.py
 Objective: Verify Python single- and two-layer CLTF transport calculations.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Fixed layer parameters and cumulative infiltration values.
 Outputs: Pytest assertions for distributions and mass conservation.
 Usage: python -m pytest python/tests/test_transport.py -q
@@ -18,6 +18,8 @@ from scipy.stats import lognorm
 from cltf.transport import (
     CLTFLayer,
     cltf_cdf,
+    cltf_depth_cdf,
+    cltf_interval_probabilities,
     cltf_layer_probabilities,
     cltf_pdf,
     cltf_two_layer_cdf,
@@ -51,6 +53,38 @@ def test_two_layer_probabilities_conserve_mass() -> None:
     assert np.all(result >= 0)
     np.testing.assert_allclose(result.sum(axis=1), 1.0, atol=1e-10)
     np.testing.assert_allclose(result[0], [1.0, 0.0, 0.0])
+
+
+def test_continuous_interval_probabilities_follow_depth_crossing_cdf() -> None:
+    y = np.array([0.0, 100.0, 400.0])
+    intervals = np.array([[0.0, 100.0], [100.0, 300.0]])
+    result = cltf_interval_probabilities(
+        y,
+        intervals,
+        mu=1.0,
+        sigma=0.5,
+        retardation=2.0,
+    )
+
+    crossing_100 = cltf_depth_cdf(
+        y,
+        depth_mm=100.0,
+        mu=1.0,
+        sigma=0.5,
+        retardation=2.0,
+    )
+    crossing_300 = cltf_depth_cdf(
+        y,
+        depth_mm=300.0,
+        mu=1.0,
+        sigma=0.5,
+        retardation=2.0,
+    )
+
+    np.testing.assert_allclose(result[:, 0], 1.0 - crossing_100)
+    np.testing.assert_allclose(result[:, 1], crossing_100 - crossing_300)
+    np.testing.assert_allclose(result[:, 2], crossing_300)
+    np.testing.assert_allclose(result.sum(axis=1), 1.0, atol=1e-12)
 
 
 def test_adaptive_and_trapezoid_convolution_agree() -> None:

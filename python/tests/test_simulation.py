@@ -4,7 +4,7 @@ Script: test_simulation.py
 Objective: Verify Python end-to-end CLTF simulation and limiting cases.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Fixed forcing, model layers, degradation, mass, and soil properties.
 Outputs: Pytest assertions.
 Usage: python -m pytest python/tests/test_simulation.py -q
@@ -14,7 +14,7 @@ Dependencies: numpy, pytest, cltf
 import numpy as np
 import pytest
 
-from cltf.simulation import simulate_cltf
+from cltf.simulation import simulate_cltf, simulate_cltf_intervals
 from cltf.transport import CLTFLayer
 
 
@@ -51,3 +51,25 @@ def test_simulation_rejects_decreasing_forcing() -> None:
             top_bulk_density_g_cm3=1.3,
             bottom_bulk_density_g_cm3=1.4,
         )
+
+
+def test_one_layer_interval_simulation_accepts_arbitrary_depths() -> None:
+    intervals = np.array([[0.0, 50.0], [50.0, 150.0], [150.0, 300.0]])
+    result = simulate_cltf_intervals(
+        time_days=[0.0, 60.0],
+        cumulative_infiltration_mm=[0.0, 400.0],
+        intervals_mm=intervals,
+        mu=1.0,
+        sigma=0.5,
+        retardation=2.0,
+        decay_rate_day=0.001,
+        application_rate_g_ha=30.0,
+        bulk_density_g_cm3=[1.3, 1.35, 1.4],
+    )
+
+    assert len(result) == 6
+    assert result["depth_top_mm"].tolist() == [0.0, 50.0, 150.0] * 2
+    assert result["concentration_ug_kg"].ge(0).all()
+    grouped = result.groupby("time_days")["mass_fraction"].sum()
+    assert grouped.loc[0.0] == 1.0
+    assert grouped.loc[60.0] < 1.0

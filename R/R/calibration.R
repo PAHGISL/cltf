@@ -2,7 +2,7 @@
 # Objective: Fit the two-layer CLTF model to replicate-level log concentrations.
 # Author: Yi Yu
 # Created: 2026-06-23
-# Last updated: 2026-06-24
+# Last updated: 2026-06-25
 # Inputs: Prepared observations, cumulative infiltration, soil properties, and bounds.
 # Outputs: Multistart parameter fits, predictions, bound flags, and objective profiles.
 # Usage: Use fit_cltf() and profile_cltf_parameter() after library(cltf).
@@ -553,4 +553,321 @@ profile_cltf_parameter <- function(
     row
   })
   do.call(rbind, rows)
+}
+
+profile_parameter_names <- function() {
+  c("mu", "sigma", "R", "k")
+}
+
+normalize_profile_parameters <- function(parameters, argument = "parameters") {
+  required <- profile_parameter_names()
+  if (!is.numeric(parameters) || length(parameters) != length(required)) {
+    stop(argument, " must contain four numeric values.", call. = FALSE)
+  }
+  if (is.null(names(parameters))) {
+    names(parameters) <- required
+  }
+  if (!all(required %in% names(parameters))) {
+    stop(
+      argument,
+      " must contain named values: ",
+      paste(required, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  parameters <- parameters[required]
+  if (any(!is.finite(parameters))) {
+    stop(argument, " must be finite.", call. = FALSE)
+  }
+  parameters
+}
+
+profile_interval_density <- function(intervals, bulk_density) {
+  if ("bulk_density_g_cm3" %in% names(intervals)) {
+    return(as.numeric(intervals$bulk_density_g_cm3))
+  }
+  if ("bulk_density_g_cm3" %in% names(bulk_density)) {
+    keys <- paste(intervals$depth_top_mm, intervals$depth_bottom_mm, sep = "|")
+    density_keys <- paste(
+      bulk_density$depth_top_mm,
+      bulk_density$depth_bottom_mm,
+      sep = "|"
+    )
+    matched <- match(keys, density_keys)
+    if (!anyNA(matched)) {
+      return(as.numeric(bulk_density$bulk_density_g_cm3[matched]))
+    }
+  }
+  vapply(
+    seq_len(nrow(intervals)),
+    function(index) {
+      weight_bulk_density(
+        bulk_density,
+        intervals$depth_top_mm[index],
+        intervals$depth_bottom_mm[index]
+      )$estimate_g_cm3
+    },
+    numeric(1)
+  )
+}
+
+profile_predict_concentrations <- function(
+  parameters,
+  observations,
+  forcing,
+  application_rate_g_ha,
+  bulk_density,
+  effective_porosity = 0.2
+) {
+  validate_calibration_data(observations, forcing)
+  parameters <- normalize_profile_parameters(parameters)
+  observation_times <- sort(unique(observations$days_since_application))
+  forcing_index <- match(observation_times, forcing$time_days)
+  if (anyNA(forcing_index)) {
+    stop(
+      "Every observation time must occur in forcing$time_days.",
+      call. = FALSE
+    )
+  }
+  simulation_forcing <- forcing[forcing_index, , drop = FALSE]
+  intervals <- unique(observations[c("depth_top_mm", "depth_bottom_mm")])
+  intervals <- intervals[order(intervals$depth_top_mm, intervals$depth_bottom_mm), ]
+  densities <- profile_interval_density(intervals, bulk_density)
+  simulation <- simulate_cltf_intervals(
+    time_days                   = simulation_forcing$time_days,
+    cumulative_infiltration_mm = simulation_forcing$cumulative_infiltration_mm,
+    intervals                  = intervals,
+    mu                         = parameters["mu"],
+    sigma                      = parameters["sigma"],
+    retardation                = parameters["R"],
+    decay_rate_day             = parameters["k"],
+    application_rate_g_ha      = application_rate_g_ha,
+    bulk_density_g_cm3         = densities,
+    effective_porosity         = effective_porosity
+  )
+  keys <- paste(
+    simulation$time_days,
+    simulation$depth_top_mm,
+    simulation$depth_bottom_mm,
+    sep = "|"
+  )
+  values <- stats::setNames(simulation$concentration_ug_kg, keys)
+  observation_keys <- paste(
+    observations$days_since_application,
+    observations$depth_top_mm,
+    observations$depth_bottom_mm,
+    sep = "|"
+  )
+  as.numeric(values[observation_keys])
+}
+
+#' Calculate the continuous one-layer CLTF profile objective
+#'
+#' @param parameters Named `mu`, `sigma`, `R`, and `k` values.
+#' @inheritParams cltf_objective
+#' @param bulk_density Data frame of interval or SLGA bulk-density bands.
+#' @return Root mean squared log-concentration residual.
+#' @export
+cltf_profile_objective <- function(
+  parameters,
+  observations,
+  forcing,
+  application_rate_g_ha,
+  bulk_density,
+  effective_porosity = 0.2,
+  penalty = 1e6
+) {
+  result <- tryCatch({
+    prediction <- profile_predict_concentrations(
+      parameters,
+      observations,
+      forcing,
+      application_rate_g_ha,
+      bulk_density,
+      effective_porosity
+    )
+    observed <- observations$analysis_concentration_ug_kg
+    keep <- is.finite(observed) & observed > 0
+    if (!any(keep) ||
+        any(!is.finite(prediction[keep])) ||
+        any(prediction[keep] <= 0)) {
+      return(penalty)
+    }
+    sqrt(mean((log(observed[keep]) - log(prediction[keep]))^2))
+  }, error = function(error) penalty)
+  if (is.finite(result)) {
+    min(result, penalty)
+  } else {
+    penalty
+  }
+}
+
+generate_profile_starts <- function(initial, lower, upper, n_starts, seed) {
+  if (length(n_starts) != 1L || n_starts < 1L) {
+    stop("n_starts must be a positive integer.", call. = FALSE)
+  }
+  starts <- matrix(NA_real_, nrow = n_starts, ncol = length(initial))
+  colnames(starts) <- names(initial)
+  starts[1, ] <- initial
+  if (n_starts > 1L) {
+    set.seed(seed)
+    for (index in 2:n_starts) {
+      starts[index, ] <- stats::runif(length(initial), lower, upper)
+    }
+  }
+  starts
+}
+
+profile_bound_hits <- function(parameters, lower, upper, tolerance) {
+  result <- logical(length(parameters))
+  names(result) <- names(parameters)
+  for (name in names(parameters)) {
+    scale <- max(1, abs(lower[name]), abs(upper[name]), abs(upper[name] - lower[name]))
+    result[name] <- abs(parameters[name] - lower[name]) <= tolerance * scale ||
+      abs(parameters[name] - upper[name]) <= tolerance * scale
+  }
+  result
+}
+
+#' Fit the continuous one-layer CLTF profile model
+#'
+#' @inheritParams cltf_profile_objective
+#' @param lower,upper,initial Parameter bounds and first start.
+#' @param starts Optional matrix/data frame of starts.
+#' @param n_starts Number of deterministic starts when `starts` is absent.
+#' @param seed Random seed for generated starts.
+#' @param bound_tolerance Tolerance for bound-hit flags.
+#' @param control Control list passed to [stats::optim()].
+#' @return A `cltf_fit` list.
+#' @export
+fit_cltf_profile <- function(
+  observations,
+  forcing,
+  application_rate_g_ha,
+  bulk_density,
+  lower              = c(mu = 0.05, sigma = 0.05, R = 0.1, k = 0),
+  upper              = c(mu = 10, sigma = 3, R = 100, k = 0.1),
+  initial            = c(mu = 1, sigma = 0.5, R = 2, k = 0.005),
+  starts             = NULL,
+  n_starts           = 6L,
+  seed               = 42L,
+  effective_porosity = 0.2,
+  penalty            = 1e6,
+  bound_tolerance    = 1e-6,
+  control            = list(maxit = 500)
+) {
+  validate_calibration_data(observations, forcing)
+  lower <- normalize_profile_parameters(lower, "lower")
+  upper <- normalize_profile_parameters(upper, "upper")
+  initial <- normalize_profile_parameters(initial, "initial")
+  if (any(lower >= upper)) {
+    stop("Every lower parameter bound must be below its upper bound.", call. = FALSE)
+  }
+  if (any(initial < lower) || any(initial > upper)) {
+    stop("initial parameters must lie within bounds.", call. = FALSE)
+  }
+  if (is.null(starts)) {
+    start_values <- generate_profile_starts(initial, lower, upper, n_starts, seed)
+  } else {
+    start_values <- as.matrix(starts[, profile_parameter_names()])
+  }
+  if (any(!is.finite(start_values)) ||
+      any(sweep(start_values, 2, lower, `<`)) ||
+      any(sweep(start_values, 2, upper, `>`))) {
+    stop("All starts must be finite and lie within bounds.", call. = FALSE)
+  }
+  context <- list(
+    observations          = observations,
+    forcing               = forcing,
+    application_rate_g_ha = application_rate_g_ha,
+    bulk_density          = bulk_density,
+    effective_porosity    = effective_porosity
+  )
+  objective <- function(parameters) {
+    do.call(
+      cltf_profile_objective,
+      c(list(parameters = parameters), context, list(penalty = penalty))
+    )
+  }
+  results <- lapply(seq_len(nrow(start_values)), function(index) {
+    start <- start_values[index, ]
+    tryCatch(
+      stats::optim(
+        par     = start,
+        fn      = objective,
+        method  = "L-BFGS-B",
+        lower   = lower,
+        upper   = upper,
+        control = control
+      ),
+      error = function(error) {
+        list(
+          par         = start,
+          value       = penalty,
+          convergence = 100L,
+          message     = conditionMessage(error)
+        )
+      }
+    )
+  })
+  objectives <- vapply(results, `[[`, numeric(1), "value")
+  best_index <- which.min(objectives)
+  best <- results[[best_index]]
+  parameters <- normalize_profile_parameters(best$par)
+  prediction <- do.call(
+    profile_predict_concentrations,
+    c(list(parameters = parameters), context)
+  )
+  predictions <- observations
+  predictions$predicted_concentration_ug_kg <- prediction
+  observed <- predictions$analysis_concentration_ug_kg
+  keep <- is.finite(observed) & observed > 0 &
+    is.finite(prediction) & prediction > 0
+  predictions$log_residual <- NA_real_
+  predictions$log_residual[keep] <- log(observed[keep]) - log(prediction[keep])
+
+  all_starts <- do.call(rbind, lapply(seq_along(results), function(index) {
+    result <- results[[index]]
+    row <- data.frame(
+      start_index = index,
+      objective   = result$value,
+      convergence = result$convergence,
+      message     = if (is.null(result$message)) "" else result$message
+    )
+    for (name in profile_parameter_names()) {
+      row[[paste0("start_", name)]] <- start_values[index, name]
+      row[[paste0("fitted_", name)]] <- result$par[name]
+    }
+    row
+  }))
+
+  fit <- list(
+    parameters          = parameters,
+    objective           = best$value,
+    convergence         = best$convergence,
+    message             = if (is.null(best$message)) "" else best$message,
+    start_index         = best_index,
+    bound_hit           = profile_bound_hits(
+      parameters,
+      lower,
+      upper,
+      bound_tolerance
+    ),
+    predictions         = predictions,
+    all_starts          = all_starts,
+    lower               = lower,
+    upper               = upper,
+    starts              = start_values,
+    transport_scales    = c(profile = parameters["mu"] * parameters["R"]),
+    identifiability_note = paste(
+      "The continuous one-layer CLTF equations identify the product mu * R;",
+      "report both parameters with caution."
+    ),
+    context             = context,
+    penalty             = penalty,
+    control             = control
+  )
+  class(fit) <- "cltf_fit"
+  fit
 }

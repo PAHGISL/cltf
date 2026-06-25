@@ -4,7 +4,7 @@ Script: contracts.py
 Objective: Define stable CLTF workbench data contracts.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Prepared site, observation, forcing, soil, fit, and assessment values.
 Outputs: Dataclasses shared by the Streamlit app and tests.
 Usage: Import contract dataclasses from workbench.contracts.
@@ -33,6 +33,7 @@ class CaseSelection:
 class ExternalInputs:
     forcing: pd.DataFrame
     bulk_density: pd.DataFrame
+    soil_properties: pd.DataFrame
     top_bulk_density_g_cm3: float
     bottom_bulk_density_g_cm3: float
     warnings: list[str]
@@ -46,6 +47,7 @@ class PreparedInputs:
     observations: pd.DataFrame
     forcing: pd.DataFrame
     bulk_density: pd.DataFrame
+    soil_properties: pd.DataFrame
     application_date: pd.Timestamp
     application_rate_g_ha: float
     top_bulk_density_g_cm3: float

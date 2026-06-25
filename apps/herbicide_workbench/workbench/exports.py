@@ -4,7 +4,7 @@ Script: exports.py
 Objective: Build shared-schema CLTF workbench download artifacts.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: RunResult objects, PreparedInputs objects, and app version strings.
 Outputs: Named CSV and JSON artifact strings for Streamlit downloads.
 Usage: Import build_export_artifacts from workbench.exports.
@@ -86,18 +86,26 @@ def _diagnostics_table(result: RunResult) -> pd.DataFrame:
         )
     diagnostics = result.fit.all_starts.copy()
     diagnostics["selected"] = diagnostics["start_index"].eq(result.fit.start_index)
-    diagnostics["start_transport_scale_top"] = (
-        diagnostics["start_mu"] * diagnostics["start_R_top"]
-    )
-    diagnostics["start_transport_scale_bottom"] = (
-        diagnostics["start_mu"] * diagnostics["start_R_bottom"]
-    )
-    diagnostics["fitted_transport_scale_top"] = (
-        diagnostics["fitted_mu"] * diagnostics["fitted_R_top"]
-    )
-    diagnostics["fitted_transport_scale_bottom"] = (
-        diagnostics["fitted_mu"] * diagnostics["fitted_R_bottom"]
-    )
+    if {"start_R", "fitted_R"} <= set(diagnostics.columns):
+        diagnostics["start_transport_scale_profile"] = (
+            diagnostics["start_mu"] * diagnostics["start_R"]
+        )
+        diagnostics["fitted_transport_scale_profile"] = (
+            diagnostics["fitted_mu"] * diagnostics["fitted_R"]
+        )
+    elif {"start_R_top", "start_R_bottom"} <= set(diagnostics.columns):
+        diagnostics["start_transport_scale_top"] = (
+            diagnostics["start_mu"] * diagnostics["start_R_top"]
+        )
+        diagnostics["start_transport_scale_bottom"] = (
+            diagnostics["start_mu"] * diagnostics["start_R_bottom"]
+        )
+        diagnostics["fitted_transport_scale_top"] = (
+            diagnostics["fitted_mu"] * diagnostics["fitted_R_top"]
+        )
+        diagnostics["fitted_transport_scale_bottom"] = (
+            diagnostics["fitted_mu"] * diagnostics["fitted_R_bottom"]
+        )
     return diagnostics
 
 
@@ -112,6 +120,21 @@ def _profiles_table(result: RunResult) -> pd.DataFrame:
             "objective",
             "convergence",
             "message",
+        ]
+    )
+
+
+def _profile_simulation_table(result: RunResult) -> pd.DataFrame:
+    profile = result.metadata.get("profile_simulation")
+    if isinstance(profile, pd.DataFrame):
+        return profile
+    return pd.DataFrame(
+        columns=[
+            "date",
+            "time_days",
+            "depth_mm",
+            "mass_density_per_mm",
+            "concentration_ug_kg",
         ]
     )
 
@@ -195,7 +218,9 @@ def build_export_artifacts(
         "observations_prepared.csv": _csv_text(prepared.observations),
         "climate_forcing.csv": _csv_text(prepared.forcing),
         "bulk_density.csv": _csv_text(prepared.bulk_density),
+        "soil_properties.csv": _csv_text(prepared.soil_properties),
         "predictions.csv": _csv_text(result.predictions),
+        "profile_simulation.csv": _csv_text(_profile_simulation_table(result)),
         "fit_parameters.csv": _csv_text(_parameter_table(result)),
         "fit_diagnostics.csv": _csv_text(_diagnostics_table(result)),
         "objective_profiles.csv": _csv_text(_profiles_table(result)),
@@ -207,6 +232,7 @@ def build_export_artifacts(
             "observations_prepared.csv",
             "climate_forcing.csv",
             "bulk_density.csv",
+            "soil_properties.csv",
         }
     }
     artifacts["run_metadata.json"] = (

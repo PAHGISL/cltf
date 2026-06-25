@@ -4,7 +4,7 @@ Script: test_exports.py
 Objective: Verify CLTF workbench export artifacts and provenance metadata.
 Author: Yi Yu
 Created: 2026-06-24
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 Inputs: Synthetic prepared inputs and run results.
 Outputs: Pytest assertions for exported CSV and JSON artifacts.
 Usage: python -m pytest apps/herbicide_workbench/tests/test_exports.py -q
@@ -61,6 +61,7 @@ def _prepared_inputs() -> PreparedInputs:
         observations=observations,
         forcing=forcing,
         bulk_density=bulk_density,
+        soil_properties=pd.DataFrame({"property": ["SOC"]}),
         application_date=application_date,
         application_rate_g_ha=220.0,
         top_bulk_density_g_cm3=1.47,

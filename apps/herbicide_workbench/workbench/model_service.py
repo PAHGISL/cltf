@@ -75,16 +75,16 @@ def default_parameters(**overrides: Any) -> ModelSettings:
 
     settings = ModelSettings(
         lower={
-            "mu": 0.05,
+            "mu": 0.1,
             "sigma": 0.10,
-            "R": 0.10,
-            "k": 0.0,
+            "R": 1.0,
+            "k": 1e-5,
         },
         upper={
-            "mu": 8.0,
-            "sigma": 2.50,
-            "R": 30.0,
-            "k": 0.05,
+            "mu": 10.0,
+            "sigma": 10.0,
+            "R": 100.0,
+            "k": 1e-1,
         },
         initial={
             "mu": 1.0,

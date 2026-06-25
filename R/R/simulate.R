@@ -160,6 +160,36 @@ depth_edges <- function(depths_mm) {
   c(first, midpoints, last)
 }
 
+spatial_density_per_mm <- function(
+  cumulative_infiltration_mm,
+  depths_mm,
+  mu,
+  sigma,
+  retardation
+) {
+  density <- matrix(
+    0,
+    nrow = length(cumulative_infiltration_mm),
+    ncol = length(depths_mm)
+  )
+  positive_time <- cumulative_infiltration_mm > 0
+  positive_depth <- depths_mm > 0
+  if (!any(positive_time) || !any(positive_depth)) {
+    return(density)
+  }
+
+  for (time_index in which(positive_time)) {
+    log_ratio <- log(
+      cumulative_infiltration_mm[time_index] /
+        (mu * retardation * depths_mm[positive_depth])
+    )
+    density[time_index, positive_depth] <-
+      exp(-(log_ratio^2) / (2 * sigma^2)) /
+      (depths_mm[positive_depth] * sigma * sqrt(2 * pi))
+  }
+  density
+}
+
 #' Simulate a continuous CLTF profile on a depth grid
 #'
 #' @inheritParams simulate_cltf_intervals
@@ -178,34 +208,81 @@ simulate_cltf_profile <- function(
   bulk_density_g_cm3,
   effective_porosity = 0.2
 ) {
+  validate_forcing(time_days, cumulative_infiltration_mm)
   depths_mm <- as.numeric(depths_mm)
-  edges <- depth_edges(depths_mm)
-  intervals <- data.frame(
-    depth_top_mm    = edges[-length(edges)],
-    depth_bottom_mm = edges[-1]
-  )
-  if (length(bulk_density_g_cm3) == 1L) {
-    interval_density <- rep(bulk_density_g_cm3, nrow(intervals))
-  } else {
-    interval_density <- bulk_density_g_cm3
+  if (length(depths_mm) == 0L ||
+      any(!is.finite(depths_mm)) ||
+      any(depths_mm < 0) ||
+      any(diff(depths_mm) <= 0)) {
+    stop("depths_mm must be finite, non-negative, and increasing.", call. = FALSE)
   }
-  result <- simulate_cltf_intervals(
-    time_days,
+  if (length(bulk_density_g_cm3) == 1L) {
+    depth_density <- rep(bulk_density_g_cm3, length(depths_mm))
+  } else {
+    depth_density <- bulk_density_g_cm3
+  }
+  if (length(depth_density) != length(depths_mm) ||
+      any(!is.finite(depth_density)) ||
+      any(depth_density <= 0)) {
+    stop("bulk_density_g_cm3 must be scalar or one value per depth.", call. = FALSE)
+  }
+  validate_positive_scalar(mu, "mu")
+  validate_positive_scalar(sigma, "sigma")
+  validate_positive_scalar(retardation, "retardation")
+  if (length(decay_rate_day) != 1L ||
+      !is.finite(decay_rate_day) ||
+      decay_rate_day < 0) {
+    stop("decay_rate_day must be one finite non-negative value.", call. = FALSE)
+  }
+  if (length(application_rate_g_ha) != 1L ||
+      !is.finite(application_rate_g_ha) ||
+      application_rate_g_ha < 0 ||
+      length(effective_porosity) != 1L ||
+      !is.finite(effective_porosity) ||
+      effective_porosity <= 0) {
+    stop("Application rate and porosity inputs are invalid.", call. = FALSE)
+  }
+
+  mass_density <- spatial_density_per_mm(
     cumulative_infiltration_mm,
-    intervals,
+    depths_mm,
     mu,
     sigma,
-    retardation,
-    decay_rate_day,
-    application_rate_g_ha,
-    interval_density,
-    effective_porosity
+    retardation
   )
-  widths <- intervals$depth_bottom_mm - intervals$depth_top_mm
-  result$depth_mm <- rep(depths_mm, times = length(time_days))
-  result$mass_density_per_mm <- result$mass_fraction /
-    rep(widths, times = length(time_days))
-  result[
+  mass_density <- sweep(
+    mass_density,
+    1,
+    exp(-decay_rate_day * time_days),
+    `*`
+  )
+  soil_mass_per_mm <- vapply(
+    depth_density,
+    function(value) soil_mass_kg_ha(0, 1, value),
+    numeric(1)
+  )
+  concentration <- sweep(
+    application_rate_g_ha * 1e6 * mass_density,
+    2,
+    soil_mass_per_mm,
+    `/`
+  ) * (0.2 / effective_porosity)
+
+  rows <- vector("list", length(time_days) * length(depths_mm))
+  row_index <- 1L
+  for (time_index in seq_along(time_days)) {
+    for (depth_index in seq_along(depths_mm)) {
+      rows[[row_index]] <- data.frame(
+        time_days                  = time_days[time_index],
+        cumulative_infiltration_mm = cumulative_infiltration_mm[time_index],
+        depth_mm                   = depths_mm[depth_index],
+        mass_density_per_mm        = mass_density[time_index, depth_index],
+        concentration_ug_kg        = concentration[time_index, depth_index]
+      )
+      row_index <- row_index + 1L
+    }
+  }
+  do.call(rbind, rows)[
     c(
       "time_days",
       "cumulative_infiltration_mm",

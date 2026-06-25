@@ -177,6 +177,20 @@ def test_simulation_heatmap_uses_green_yellow_red_pcolormesh() -> None:
     )
     cmap = figure.axes[0].collections[0].cmap
     assert cmap(0.0)[:3] == (0.0, 0.40784313725490196, 0.21568627450980393)
+    assert figure.axes[0].collections[0].get_clim() == (0.0, 15.0)
+
+
+def test_simulation_heatmap_uses_realistic_display_scale_with_large_values() -> None:
+    simulation = _profile_simulation().copy()
+    simulation.loc[simulation.index[0], "concentration_ug_kg"] = 600.0
+
+    figure = plot_simulation_heatmap(
+        simulation,
+        top_depth_mm=150,
+        bottom_depth_mm=300,
+    )
+
+    assert figure.axes[0].collections[0].get_clim() == (0.0, 15.0)
 
 
 def test_simulation_heatmap_handles_nullable_profile_concentrations() -> None:

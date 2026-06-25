@@ -462,6 +462,7 @@ def plot_simulation_heatmap(
     top_depth_mm: float,
     bottom_depth_mm: float,
     assessment_day: int | float | None = None,
+    display_max_ug_kg: float = 15.0,
 ) -> Figure:
     """Plot simulated resident concentration as a depth heatmap."""
 
@@ -500,6 +501,9 @@ def plot_simulation_heatmap(
         x_edges = _time_edges(time_values)
         y_edges = np.array([0.0, float(top_depth_mm), float(bottom_depth_mm)])
     concentration = _numeric_matrix(concentration)
+    display_max = float(display_max_ug_kg)
+    if not np.isfinite(display_max) or display_max <= 0:
+        raise ValueError("display_max_ug_kg must be finite and positive")
 
     figure, axis = plt.subplots(figsize=(8.5, 4.5), constrained_layout=True)
     mesh = axis.pcolormesh(
@@ -507,6 +511,8 @@ def plot_simulation_heatmap(
         y_edges,
         concentration,
         cmap=CONCENTRATION_CMAP,
+        vmin=0.0,
+        vmax=display_max,
         shading="flat",
     )
     axis.set_ylim(float(bottom_depth_mm), 0.0)
@@ -521,6 +527,7 @@ def plot_simulation_heatmap(
         orientation="horizontal",
         pad=0.16,
         fraction=0.08,
+        extend="max",
     )
     colorbar.set_label("Resident concentration (\N{MICRO SIGN}g/kg)")
     return figure

@@ -183,6 +183,32 @@ def _depth_edges(depths_mm: np.ndarray) -> np.ndarray:
     return np.concatenate(([first], midpoints, [last]))
 
 
+def _spatial_density_per_mm(
+    cumulative_infiltration_mm: np.ndarray,
+    depths_mm: np.ndarray,
+    mu: float,
+    sigma: float,
+    retardation: float,
+) -> np.ndarray:
+    density = np.zeros(
+        (len(cumulative_infiltration_mm), len(depths_mm)),
+        dtype=float,
+    )
+    positive_time = cumulative_infiltration_mm > 0
+    positive_depth = depths_mm > 0
+    if not np.any(positive_time) or not np.any(positive_depth):
+        return density
+
+    y = cumulative_infiltration_mm[positive_time, np.newaxis]
+    depth = depths_mm[positive_depth][np.newaxis, :]
+    log_ratio = np.log(y / (mu * retardation * depth))
+    density[np.ix_(positive_time, positive_depth)] = (
+        np.exp(-(log_ratio**2) / (2.0 * sigma**2))
+        / (depth * sigma * np.sqrt(2.0 * np.pi))
+    )
+    return density
+
+
 def simulate_cltf_profile(
     time_days: ArrayLike,
     cumulative_infiltration_mm: ArrayLike,
@@ -197,46 +223,75 @@ def simulate_cltf_profile(
 ) -> pd.DataFrame:
     """Simulate a continuous CLTF profile on a depth grid."""
 
+    time, infiltration = _validated_forcing(
+        time_days,
+        cumulative_infiltration_mm,
+    )
     depths = np.asarray(depths_mm, dtype=float)
-    edges = _depth_edges(depths)
-    intervals = np.column_stack((edges[:-1], edges[1:]))
+    if (
+        depths.ndim != 1
+        or len(depths) == 0
+        or not np.all(np.isfinite(depths))
+        or np.any(depths < 0)
+        or np.any(np.diff(depths) <= 0)
+    ):
+        raise ValueError("depths_mm must be finite, non-negative, and increasing")
     density = np.asarray(bulk_density_g_cm3, dtype=float)
     if density.ndim == 0:
-        interval_density = np.full(len(intervals), float(density))
+        depth_density = np.full(len(depths), float(density))
     else:
         density = np.atleast_1d(density)
         if len(density) != len(depths):
             raise ValueError("bulk_density_g_cm3 must be scalar or one value per depth")
-        interval_density = density
+        depth_density = density
+    if not np.all(np.isfinite(depth_density)) or np.any(depth_density <= 0):
+        raise ValueError("bulk_density_g_cm3 must contain positive finite values")
+    _validated_positive_scalar(mu, "mu")
+    _validated_positive_scalar(sigma, "sigma")
+    _validated_positive_scalar(retardation, "retardation")
+    if not np.isfinite(decay_rate_day) or decay_rate_day < 0:
+        raise ValueError("decay_rate_day must be finite and non-negative")
+    if (
+        not np.isfinite(application_rate_g_ha)
+        or application_rate_g_ha < 0
+        or not np.isfinite(effective_porosity)
+        or effective_porosity <= 0
+    ):
+        raise ValueError("Application rate and porosity inputs are invalid")
 
-    interval_result = simulate_cltf_intervals(
-        time_days,
-        cumulative_infiltration_mm,
-        intervals,
+    mass_density = _spatial_density_per_mm(
+        infiltration,
+        depths,
         mu,
         sigma,
         retardation,
-        decay_rate_day,
-        application_rate_g_ha,
-        interval_density,
-        effective_porosity,
     )
-    widths = intervals[:, 1] - intervals[:, 0]
-    interval_result["depth_mm"] = np.tile(depths, len(interval_result["time_days"].unique()))
-    interval_result["mass_density_per_mm"] = (
-        interval_result["mass_fraction"].to_numpy(dtype=float)
-        / np.tile(widths, len(interval_result["time_days"].unique()))
+    mass_density *= np.exp(-float(decay_rate_day) * time)[:, np.newaxis]
+    soil_mass_per_mm = np.asarray(
+        [soil_mass_kg_ha(0.0, 1.0, value) for value in depth_density],
+        dtype=float,
     )
-    return interval_result.loc[
-        :,
-        [
-            "time_days",
-            "cumulative_infiltration_mm",
-            "depth_mm",
-            "mass_density_per_mm",
-            "concentration_ug_kg",
-        ],
-    ]
+    concentration = (
+        float(application_rate_g_ha)
+        * 1e6
+        * mass_density
+        / soil_mass_per_mm[np.newaxis, :]
+        * (0.2 / float(effective_porosity))
+    )
+
+    rows = []
+    for time_index, (day, infiltrated) in enumerate(zip(time, infiltration)):
+        for depth_index, depth in enumerate(depths):
+            rows.append(
+                {
+                    "time_days": day,
+                    "cumulative_infiltration_mm": infiltrated,
+                    "depth_mm": depth,
+                    "mass_density_per_mm": mass_density[time_index, depth_index],
+                    "concentration_ug_kg": concentration[time_index, depth_index],
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def simulate_cltf(

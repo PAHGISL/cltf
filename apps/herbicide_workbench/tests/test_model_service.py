@@ -96,3 +96,20 @@ def test_fit_uses_replicate_log_objective() -> None:
         "concentration_top_ug_kg",
         "concentration_bottom_ug_kg",
     } <= set(result.predictions.columns)
+
+
+def test_default_profile_parameter_bounds_match_model_review() -> None:
+    settings = default_parameters()
+
+    assert settings.lower == {
+        "mu": 0.1,
+        "sigma": 0.1,
+        "R": 1.0,
+        "k": 1e-5,
+    }
+    assert settings.upper == {
+        "mu": 10.0,
+        "sigma": 10.0,
+        "R": 100.0,
+        "k": 1e-1,
+    }

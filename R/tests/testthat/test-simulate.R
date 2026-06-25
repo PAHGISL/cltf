@@ -75,3 +75,28 @@ test_that("one-layer interval simulation accepts arbitrary depths", {
   expect_equal(grouped$mass_fraction[grouped$time_days == 0], 1)
   expect_lt(grouped$mass_fraction[grouped$time_days == 60], 1)
 })
+
+test_that("one-layer profile peak moves down with infiltration", {
+  depths <- seq(0, 300, length.out = 121)
+  result <- simulate_cltf_profile(
+    time_days                   = c(30, 60, 90),
+    cumulative_infiltration_mm = c(120, 240, 360),
+    depths_mm                  = depths,
+    mu                         = 1,
+    sigma                      = 0.5,
+    retardation                = 2,
+    decay_rate_day             = 0.001,
+    application_rate_g_ha      = 30,
+    bulk_density_g_cm3         = 1.35
+  )
+
+  peak_rows <- do.call(rbind, lapply(
+    split(result, result$time_days),
+    function(table) table[which.max(table$concentration_ug_kg), ]
+  ))
+  peak_rows <- peak_rows[order(peak_rows$time_days), ]
+  surface <- result$concentration_ug_kg[result$depth_mm == 0]
+
+  expect_true(all(surface == 0))
+  expect_true(all(diff(peak_rows$depth_mm) > 0))
+})

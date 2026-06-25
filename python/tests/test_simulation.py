@@ -14,7 +14,7 @@ Dependencies: numpy, pytest, cltf
 import numpy as np
 import pytest
 
-from cltf.simulation import simulate_cltf, simulate_cltf_intervals
+from cltf.simulation import simulate_cltf, simulate_cltf_intervals, simulate_cltf_profile
 from cltf.transport import CLTFLayer
 
 
@@ -73,3 +73,28 @@ def test_one_layer_interval_simulation_accepts_arbitrary_depths() -> None:
     grouped = result.groupby("time_days")["mass_fraction"].sum()
     assert grouped.loc[0.0] == 1.0
     assert grouped.loc[60.0] < 1.0
+
+
+def test_one_layer_profile_peak_moves_down_with_infiltration() -> None:
+    depths = np.linspace(0.0, 300.0, 121)
+    result = simulate_cltf_profile(
+        time_days=[30.0, 60.0, 90.0],
+        cumulative_infiltration_mm=[120.0, 240.0, 360.0],
+        depths_mm=depths,
+        mu=1.0,
+        sigma=0.5,
+        retardation=2.0,
+        decay_rate_day=0.001,
+        application_rate_g_ha=30.0,
+        bulk_density_g_cm3=1.35,
+    )
+
+    peak_depths = (
+        result.loc[result.groupby("time_days")["concentration_ug_kg"].idxmax()]
+        .sort_values("time_days")["depth_mm"]
+        .to_numpy()
+    )
+    surface = result.loc[result["depth_mm"].eq(0.0), "concentration_ug_kg"]
+
+    assert surface.eq(0.0).all()
+    assert np.all(np.diff(peak_depths) > 0)
